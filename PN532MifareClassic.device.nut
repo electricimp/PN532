@@ -8,6 +8,7 @@ class PN532MifareClassic {
     static AUTH_TYPE_B = "B";
 
     static AUTH_ERROR = 0x14;
+    static STATUS_OK = 0;
     
     _pn532 = null;
     
@@ -92,9 +93,8 @@ class PN532MifareClassic {
             // Consume response type byte
             responseData.readn('b');
             
-            // status 0 is good
             local status = responseData.readn('b');
-            if(status == 0) {
+            if(status == STATUS_OK) {
                 imp.wakeup(0, function() {
                     userCallback(null, true);
                 });
@@ -120,20 +120,17 @@ class PN532MifareClassic {
             // Consume response type byte
             responseData.readn('b');
             
-            // status 0 is good
             local status = responseData.readn('b');
-            if(status != 0) {
-                imp.wakeup(0, function() {
-                    userCallback("Read error: " + status, null);
-                });
-            } else {
+            if(status == STATUS_OK) {
                 local readData = responseData.readblob(16); // DataIn has max length of 16
                 imp.wakeup(0, function() {
                     userCallback(null, readData);
                 });
-            }
-            
-            
+            } else {
+                imp.wakeup(0, function() {
+                    userCallback("Read error: " + status, null);
+                });
+            } 
         };
     }
     
@@ -152,9 +149,8 @@ class PN532MifareClassic {
             // Consume response type byte
             responseData.readn('b');
             
-            // status 0 is good
             local status = responseData.readn('b');
-            if(status == 0) {
+            if(status == STATUS_OK) {
                 imp.wakeup(0, function() {
                     userCallback(null);
                 });                
