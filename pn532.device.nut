@@ -20,16 +20,16 @@ class PN532 {
     static TAG_TYPE_106_JEWEL = 0x04;
     
     _spi = null;
-    _nss = null; // Not Slave Select
+    _ncs = null; // Not Chip Select
     _rstpd = null; // Reset and Power-Down
     _irq = null;
     _messageInTransit = null;
     
-    function constructor(spi, nss, rstpd, irq, callback) {
+    function constructor(spi, ncs, rstpd, irq, callback) {
         _spi = spi;
         
-        _nss = nss;
-        _nss.configure(DIGITAL_OUT, 1); // Start high - no transmit
+        _ncs = ncs;
+        _ncs.configure(DIGITAL_OUT, 1); // Start high - no transmit
         
         _irq = irq
         _irq.configure(DIGITAL_IN, _irqCallback.bindenv(this));
@@ -263,13 +263,13 @@ class PN532 {
     
     function _spiSendFrame(spiOp, frame, callback=null) {
         frame.seek(0, 'b');
-        _nss.write(0);
+        _ncs.write(0);
         imp.sleep(0.002); // Give the PN532 time to wake up
         
         _spi.write(format("%c", spiOp));
         _spi.write(frame);
         
-        _nss.write(1);
+        _ncs.write(1);
         
         if(callback != null) {
             // Run callback immediately so we can act before a quick response gets in
@@ -291,7 +291,7 @@ class PN532 {
             "error" : null
         };
 
-        _nss.write(0);
+        _ncs.write(0);
         imp.sleep(0.002); // Give the PN532 time to wake up
 
         _spi.write(format("%c", SPI_OP_DATA_READ));
@@ -337,7 +337,7 @@ class PN532 {
             }
         }
             
-        _nss.write(1);
+        _ncs.write(1);
         return parsedFrame;
     }
     

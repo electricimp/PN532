@@ -13,12 +13,12 @@ This library currently contains two classes:
 
 # PN532 Class
 
-## Constructor: PN532(*spi, nss, rstpd, irq, callback*)
+## Constructor: PN532(*spi, ncs, rstpd, irq, callback*)
 
 Creates and initializes an object representing the PN532 NFC device.
 
 - *spi* should be a [SPI object](https://electricimp.com/docs/api/hardware/spi/) pre-configured with the flags `LSB_FIRST | CLOCK_IDLE_HIGH` and a clock rate.  The PN532 supports clock rates up to 5 MHz.
-- *nss* should be a pin connected to the PN532's not-selected line.
+- *ncs* should be a pin connected to the PN532's not-chip-select line.
 - *rstpd* should be a pin connected to the PN532's RSTPDN (Reset/Power-Down) pin.
 - *irq* should be a pin connected to the PN532's P70_IRQ pin.
 - *callback* is a function that will be called when object instantiation is complete.  It takes one *error* parameter that is null upon successful instantiation.
@@ -27,7 +27,7 @@ Creates and initializes an object representing the PN532 NFC device.
 #require "PN532.class.nut:1.0.0"
 
 local spi = hardware.spi257;
-local nss = hardware.pin1;
+local ncs = hardware.pin1;
 local rstpd = hardware.pin3;
 local irq = hardware.pin4;
 
@@ -41,7 +41,7 @@ function constructorCallback(error) {
     // It's now safe to use the PN532
 }
 
-reader <- PN532(spi, nss, rstpd, irq, constructorCallback);
+reader <- PN532(spi, ncs, rstpd, irq, constructorCallback);
 ```
 
 ## init(*callback*)
