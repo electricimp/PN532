@@ -1,3 +1,7 @@
+// Copyright (c) 2015 Electric Imp
+// This file is licensed under the MIT License
+// http://opensource.org/licenses/MIT
+
 class PN532 {
     
     static SPI_OP_DATA_WRITE = 0x01;

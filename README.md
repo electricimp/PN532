@@ -294,4 +294,4 @@ mifareReader.write(0x2, data, writeCallback);
 
 # License
 
-The PN532 library is licensed under the [MIT License](./LICENSE).
+The PN532 libraries are licensed under the [MIT License](./LICENSE).
