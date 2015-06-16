@@ -11,13 +11,14 @@ class PN532 {
     static COMMAND_SAM_CONFIGURATION = 0x14;
     static COMMAND_RF_CONFIGURATION = 0x32;
     static COMMAND_IN_DATA_EXCHANGE = 0x40;
-    static COMMAND_IN_LIST_PASSIVE_TARGET = 0x4A;
+    static COMMAND_IN_AUTOPOLL = 0x60;
     
     static TAG_TYPE_106_A = 0x00;
-    static TAG_TYPE_212_FELICIA = 0x01;
-    static TAG_TYPE_424_FELICIA = 0x02;
+    static TAG_TYPE_212 = 0x01;
+    static TAG_TYPE_424 = 0x02;
     static TAG_TYPE_106_B = 0x03;
     static TAG_TYPE_106_JEWEL = 0x04;
+    static TAG_FLAG_MIFARE_FELICA = 0x10;
     
     _spi = null;
     _ncs = null; // Not Chip Select
@@ -46,40 +47,19 @@ class PN532 {
     }
     
     function init(callback) {
-        // Do some RF setup for later
-        local configItem = 0x5; // MaxRetries
-        local maxRetryATR = 0xFF; // Default
-        local maxRetryPSL = 0x1; // Default
-        local maxRetryPassiveActivation = 0x14;
-        
-        local dataBlob = blob(4);
-        dataBlob[0] = configItem;
-        dataBlob[1] = maxRetryATR;
-        dataBlob[2] = maxRetryPSL;
-        dataBlob[3] = maxRetryPassiveActivation;
-    
-        local rfConfigFrame = _makeCommandFrame(COMMAND_RF_CONFIGURATION, dataBlob);
-        sendRequest(rfConfigFrame, function(error, data) {
-            if(error != null) {
-                imp.wakeup(0, function() {
-                   callback(error); 
-                });
-            } else {
-                // Disable SAM
-                local mode = 0x1;
-                local timeout = 0x14;
+        // Disable SAM
+        local mode = 0x1;
+        local timeout = 0x14;
 
-                local dataBlob = blob(2);
-                dataBlob[0] = mode;
-                dataBlob[1] = timeout;
-                
-                local samFrame = _makeCommandFrame(COMMAND_SAM_CONFIGURATION, dataBlob);
-                sendRequest(samFrame, function(error, data) {
-                        imp.wakeup(0, function() {
-                           callback(error); 
-                        });
-                });
-            }
+        local dataBlob = blob(2);
+        dataBlob[0] = mode;
+        dataBlob[1] = timeout;
+        
+        local samFrame = _makeCommandFrame(COMMAND_SAM_CONFIGURATION, dataBlob);
+        sendRequest(samFrame, function(error, data) {
+            imp.wakeup(0, function() {
+               callback(error); 
+            });
         });
     };
     
@@ -90,21 +70,16 @@ class PN532 {
         sendRequest(frame, responseCallback);
     }
     
-    function getNearbyTags(tagType, initiatorData, callback) {
-        local responseCallback = _getNearbyTagsCallback(callback);
+    function pollNearbyTags(tagType, pollAttempts, pollPeriod, callback) {
         
-        local maxTags = 1; // Device only supports up to two tags, this limits the device to 1
+        local dataBlob = blob(3);
+        
+        dataBlob.writen(pollAttempts, 'b');
+        dataBlob.writen(pollPeriod, 'b');
+        dataBlob.writen(tagType, 'b')
 
-        local initiatorDataLength = initiatorData == null ? 0 : initiatorData.len();
-        local dataBlob = blob(2 + initiatorDataLength);
-        dataBlob.writen(maxTags, 'b');
-        dataBlob.writen(tagType, 'b');
-        if(initiatorData != null) {
-            dataBlob.writeblob(initiatorData);
-        }
-        
-        local frame = _makeCommandFrame(COMMAND_IN_LIST_PASSIVE_TARGET, dataBlob);
-        
+        local responseCallback = _getPollTagsCallback(callback);
+        local frame = _makeCommandFrame(COMMAND_IN_AUTOPOLL, dataBlob);
         sendRequest(frame, responseCallback);
     }
     
@@ -154,7 +129,7 @@ class PN532 {
         };
     }
 
-    function _getNearbyTagsCallback(userCallback) {
+    function _getPollTagsCallback(userCallback) {
         return function(error, responseData) {
             if(error != null) {
                 imp.wakeup(0, function() {
@@ -163,6 +138,7 @@ class PN532 {
                 return;
             }
             
+            // Consume message type
             responseData.seek(1, 'b');
             
             local numTagsFound = responseData.readn('b');
@@ -170,8 +146,12 @@ class PN532 {
             
             if(numTagsFound > 0) {
                 
-                // Skip reading the first byte, it's the tag number (i.e. out of numTagsFound)
-                responseData.seek(1, 'c');
+                local tagType = responseData.readn('b');
+                
+                local dataLength = responseData.readn('b');
+                
+                // Consume the tag number (i.e. out of numTagsFound)
+                responseData.readn('b');
                 
                 local sensRes = responseData.readblob(2);
 
@@ -190,6 +170,7 @@ class PN532 {
                 }
                 
                 tagData = {
+                    "type" : tagType,
                     "SENS_RES" : sensRes
                     "SEL_RES" : selRes,
                     "NFCID" : nfcId,

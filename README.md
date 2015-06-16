@@ -84,25 +84,30 @@ function firmwareVersionCallback(error, version) {
 reader.getFirmwareVersion(firmwareVersionCallback);
 ```
 
-## getNearbyTags(*tagType, initiatorData, callback*)
+## pollNearbyTags(*tagType, pollAttempts, pollPeriod, callback*)
 
-Searches for nearby NFC tags of type *tagType* and passes scan results to the *callback*.
+Repeatedly searches for nearby NFC tags of type *tagType* and passes scan results to the *callback* upon completion.
 
 *tagType* is an integer representing the baud rate and initialization protocol used during the scan.  It must be taken from the following static class members:
 
 - `PN532.TAG_TYPE_106_A`: 106 kbps ISO/IEC14443 Type A
-- `PN532.TAG_TYPE_212_FELICIA`: 212 kbps FeliCa polling
-- `PN532.TAG_TYPE_424_FELICIA`: 424 kbps FeliCa polling
+- `PN532.TAG_TYPE_212`: Generic 212 kbps
+- `PN532.TAG_TYPE_424`: Generic 424 kbps
 - `PN532.TAG_TYPE_106_B`: 106 kbps ISO/IEC14443-3B
 - `PN532.TAG_TYPE_106_JEWEL`: 106 kbps Innovision Jewel
 
-*initiatorData* is a blob containing the initialization data specific to the selected protocol.  For a detailed description of the format of this argument, see the PN532 datasheet.
+Any of the above members can also be combined with the flag `PN532.TAG_FLAG_MIFARE_FELICA` where appropriate to specify that only cards with MIFARE or FeliCa support should be polled.
+
+*pollAttempts* is an integer representing how many times the PN532 should search for the specified card type. Any value between 0x01 and 0xFE will initiate the corresponding number of polls.  The value 0xFF will poll forever until a card is found.
+
+*pollPeriod* is an integer controlling the time in between poll attempts.  It indicates units of 150 ms.
 
 *callback* is a function with the following arguments:
 
 - *error*: A string that is null on success.
 - *numTagsFounds*: The number of tags found during the scan (currently either 1 or 0)
 - *tagData*: A table that is non-null only when *numTagsFound* is 1 and contains the following fields:
+ - *type*: The type of tag found.  This corresponds to the tag type specified above except when the `TAG_FLAG_MIFARE_FELICA` flag has not been used, when it will be added if MIFARE or FeliCa support has been detected.
  - *SENS_RES*: A 2-byte blob representing the SENS_RES/ATQA field of the tag
  - *SEL_RES*: 1 byte representing the SEL_RES/SAK field of the tag
  - *NFCID*: A blob representing the semi-unique UID of the tag (usually either 4 or 7 bytes)
@@ -125,7 +130,8 @@ function scanCallback(error, numTagsFound, tagData) {
     }
 }
 
-reader.getNearbyTags(PN532.TAG_TYPE_106_A, scanCallback);
+// Poll 10 times around once a second
+reader.pollNearbyTags(PN532.TAG_TYPE_106_A | PN532.TAG_FLAG_MIFARE_FELICA, 0x0A, 6, scanCallback);
 ```
 
 **The following methods are exposed for use in creating extensions of the PN532 class to support extra protocols and commands.**
@@ -195,19 +201,19 @@ local reader = PN532(spi, nss, rstpd, irq, constructorCallback);
 mifareReader <- PN532MifareClassic(reader);
 ```
 
-## getNearbyTags(*callback*)
+## pollNearbyTags(*pollAttempts, pollPeriod, callback*)
 
-A wrapper around the PN532 class's [getNearbyTags()](#getnearbytagstagtype-initiatordata-callback) method that configures it to search for MIFARE NFC tags.
+A wrapper around the PN532 class's [pollNearbyTags()](#pollnearbytagstagtype-pollattempts-pollperiod-callback) method that configures it to search for MIFARE NFC tags.
 
 ```squirrel
-mifareReader.getNearbyTags(scanCallback);
+mifareReader.pollNearbyTags(0x0A, 6, scanCallback);
 ```
 
 ## authenticate(*tagSerial, address, aOrB, key, callback*)
 
 Attempts to authenticate the reader to perform operations on a specified EEPROM address.
 
-*tagSerial*: A blob representing the UID of the tag to be authenticated. This UID can be taken from the response to the [getNearbyTags()](#getnearbytags-callback) call.
+*tagSerial*: A blob representing the UID of the tag to be authenticated. This UID can be taken from the response to the [pollNearbyTags()](#pollnearbytags-pollattempts-pollperiod-callback) call.
 
 *address*: The address of the memory block to be authenticated. For the MIFARE Classic 1k, this is an integer in the range 0-63.
 

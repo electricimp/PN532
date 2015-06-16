@@ -15,8 +15,8 @@ class PN532MifareClassic {
         _pn532 = pn532;
     }
     
-    function getNearbyTags(callback) {
-        _pn532.getNearbyTags(PN532.TAG_TYPE_106_A, null, callback);
+    function pollNearbyTags(pollAttempts, pollPeriod, callback) {
+        _pn532.pollNearbyTags(PN532.TAG_TYPE_106_A | PN532.TAG_FLAG_MIFARE_FELICA, pollAttempts, pollPeriod, callback);
     }
     
     function authenticate(tagSerial, address, aOrB, key, callback){
