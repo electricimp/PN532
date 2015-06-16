@@ -36,13 +36,13 @@ class PN532MifareClassic {
         // Package and send request
         local responseCallback = _getAuthenticationCallback(callback);
         local frame = _makeMifareFrame(cmd, address, payload);
-        _pn532.sendRequest(frame, responseCallback);
+        _pn532.sendRequest(frame, responseCallback.bindenv(this));
     }
     
     function read(address, callback) {
         local responseCallback = _getReadCallback(callback);
         local frame = _makeMifareFrame(CMD_READ_16, address);
-        _pn532.sendRequest(frame, responseCallback);        
+        _pn532.sendRequest(frame, responseCallback.bindenv(this));        
     }
     
     // callback takes error
@@ -57,7 +57,7 @@ class PN532MifareClassic {
         // Package and send request
         local responseCallback = _getStatusOkCallback(callback);
         local frame = _makeMifareFrame(CMD_WRITE_16, address, data);
-        _pn532.sendRequest(frame, responseCallback);      
+        _pn532.sendRequest(frame, responseCallback.bindenv(this));      
     }
     
     // -------------------- PRIVATE METHODS -------------------- //
