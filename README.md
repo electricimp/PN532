@@ -84,7 +84,7 @@ function firmwareVersionCallback(error, version) {
 reader.getFirmwareVersion(firmwareVersionCallback);
 ```
 
-## getNearbyTags(*tagType, callback*)
+## getNearbyTags(*tagType, initiatorData, callback*)
 
 Searches for nearby NFC tags of type *tagType* and passes scan results to the *callback*.
 
@@ -95,6 +95,8 @@ Searches for nearby NFC tags of type *tagType* and passes scan results to the *c
 - `PN532.TAG_TYPE_424_FELICIA`: 424 kbps FeliCa polling
 - `PN532.TAG_TYPE_106_B`: 106 kbps ISO/IEC14443-3B
 - `PN532.TAG_TYPE_106_JEWEL`: 106 kbps Innovision Jewel
+
+*initiatorData* is a blob containing the initialization data specific to the selected protocol.  For a detailed description of the format of this argument, see the PN532 datasheet.
 
 *callback* is a function with the following arguments:
 
@@ -195,7 +197,7 @@ mifareReader <- PN532MifareClassic(reader);
 
 ## getNearbyTags(*callback*)
 
-A wrapper around the PN532 class's [getNearbyTags()](#getnearbytagstagtype-callback) method that configures it to search for MIFARE NFC tags.
+A wrapper around the PN532 class's [getNearbyTags()](#getnearbytagstagtype-initiatordata-callback) method that configures it to search for MIFARE NFC tags.
 
 ```squirrel
 mifareReader.getNearbyTags(scanCallback);
