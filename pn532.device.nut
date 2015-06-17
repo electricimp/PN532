@@ -63,7 +63,7 @@ class PN532 {
         dataBlob[0] = mode;
         dataBlob[1] = timeout;
         
-        local samFrame = _makeCommandFrame(COMMAND_SAM_CONFIGURATION, dataBlob);
+        local samFrame = makeCommandFrame(COMMAND_SAM_CONFIGURATION, dataBlob);
         sendRequest(samFrame, function(error, data) {
             imp.wakeup(0, function() {
                callback(error); 
@@ -73,7 +73,7 @@ class PN532 {
     
     function getFirmwareVersion(callback) {
         local responseCallback = _getFirmwareVersionCallback(callback);
-        local frame = _makeCommandFrame(COMMAND_GET_FIRMWARE_VERSION);
+        local frame = makeCommandFrame(COMMAND_GET_FIRMWARE_VERSION);
 
         sendRequest(frame, responseCallback);
     }
@@ -87,7 +87,7 @@ class PN532 {
         dataBlob.writen(tagType, 'b')
 
         local responseCallback = _getPollTagsCallback(callback);
-        local frame = _makeCommandFrame(COMMAND_IN_AUTOPOLL, dataBlob);
+        local frame = makeCommandFrame(COMMAND_IN_AUTOPOLL, dataBlob);
         sendRequest(frame, responseCallback);
     }
     
@@ -97,7 +97,18 @@ class PN532 {
         local exchangeFrame = blob(1 + data.len());
         exchangeFrame.writen(tagNumber, 'b');
         exchangeFrame.writeblob(data);
-        return _makeCommandFrame(COMMAND_IN_DATA_EXCHANGE, exchangeFrame);
+        return makeCommandFrame(COMMAND_IN_DATA_EXCHANGE, exchangeFrame);
+    }
+    
+    static function makeCommandFrame(command, data=null) {
+        local dataSize = data == null ? 0 : data.len();
+        local frame = blob(1 + dataSize);
+        frame.writen(command, 'b');
+        if(data != null) {
+            frame.writeblob(data);
+        }
+        
+        return _makeInformationFrame(frame);
     }
     
     function sendRequest(requestFrame, responseCallback, numRetries=5) {
@@ -194,14 +205,6 @@ class PN532 {
     }
 
     /***** APPLICATION LAYER COMMUNICATION *****/
-
-    static function _makeCommandFrame(command, data=null) {
-        local dataSize = data == null ? 0 : data.len();
-        local frame = blob(1 + dataSize);
-        frame.writen(command, 'b');
-        if(data != null) {
-            frame.writeblob(data);
-        }
         
         return _makeInformationFrame(frame);
     }
