@@ -14,6 +14,8 @@ class PN532MifareClassic {
     static AUTH_ERROR = 0x14;
     static STATUS_OK = 0;
     
+    static BLOCK_LENGTH = 16;
+    
     _pn532 = null;
     
     function constructor(pn532) {
@@ -53,7 +55,7 @@ class PN532MifareClassic {
     // callback takes error
     function write(address, data, callback) {
         // Each block has 16 bytes to write to
-        if(data.len() != 16) {
+        if(data.len() != BLOCK_LENGTH) {
             imp.wakeup(0, function() {
                 callback("Incorrect data length (must be 16 bytes)", null);
             });
@@ -81,6 +83,7 @@ class PN532MifareClassic {
         }
         
         // Use the base PN532 class to make the proper frame
+        // We only support communicating with one tag at a time, so target tag 1
         return PN532.makeDataExchangeFrame(1, frame);
     }
     
@@ -126,7 +129,7 @@ class PN532MifareClassic {
             
             local status = responseData.readn('b');
             if(status == STATUS_OK) {
-                local readData = responseData.readblob(16); // DataIn has max length of 16
+                local readData = responseData.readblob(BLOCK_LENGTH); // DataIn has max length of 16
                 imp.wakeup(0, function() {
                     userCallback(null, readData);
                 });

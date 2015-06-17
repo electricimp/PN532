@@ -38,6 +38,10 @@ class PN532 {
         
         _irq = irq
         _irq.configure(DIGITAL_IN, _irqCallback.bindenv(this));
+        
+        // If _messageInTransit.responseCallback is set, there is currently a pending request waiting for a response.
+        // _messageInTransit.cancelAckTimer is called when a request is ACKed by the PN532 to prevent the timeout routine from running.
+        // Both of these are maintained by sendRequest and _irqCallback
         _messageInTransit = {
             "responseCallback" : null,
             "cancelAckTimer" : null
@@ -97,6 +101,7 @@ class PN532 {
     }
     
     function sendRequest(requestFrame, responseCallback, numRetries=5) {
+        // Do not let a new message be sent if there is a currently pending one
         if(_messageInTransit.responseCallback == null) {
             _messageInTransit.responseCallback = responseCallback;
             _spiSendFrame(SPI_OP_DATA_WRITE, requestFrame, function(){
@@ -227,11 +232,12 @@ class PN532 {
         return frame;
     }
     
-    // Computes a length checksum such that lower byte of [data + checksum] = 0x00
+    // Computes a checksum such that lower byte of [data + checksum] = 0x00
     static function _computeChecksumByte(data) {
         return (0 - data) & 0xff;
     }
     
+    // Computes a checksum like in _computeChecksumByte, except across the sum of an entire data blob
     static function _computeChecksumBlob(data) {
         local sum = 0;
         foreach(byte in data) {
@@ -248,12 +254,15 @@ class PN532 {
     
     function _spiSendFrame(spiOp, frame, callback=null) {
         frame.seek(0, 'b');
+        
+        // Wake up the PN532 and give it time to set up
         _ncs.write(0);
-        imp.sleep(0.002); // Give the PN532 time to wake up
+        imp.sleep(0.002);
         
         _spi.write(format("%c", spiOp));
         _spi.write(frame);
         
+        // Put the PN532 back to sleep
         _ncs.write(1);
         
         if(callback != null) {
@@ -276,9 +285,11 @@ class PN532 {
             "error" : null
         };
 
+        // Wake up the PN532 and give it time to set up
         _ncs.write(0);
-        imp.sleep(0.002); // Give the PN532 time to wake up
+        imp.sleep(0.002);
 
+        // Formally request the incoming frame
         _spi.write(format("%c", SPI_OP_DATA_READ));
         
         // Consume the beginning of the frame to check for errors and establish frame length.
@@ -299,7 +310,7 @@ class PN532 {
                     parsedFrame.error = "Packet length checksum failure";
                 } else {
                 
-                    // Consume the remainder of the frame
+                    // Consume the remainder of the frame and package it for parsing
                     local frameBody = _spi.readblob(packetLength + 1);
                     frameBody.seek(0, 'b');
                     if(_computeChecksumBlob(frameBody.readblob(packetLength)) != frameBody[packetLength]) {
@@ -321,12 +332,14 @@ class PN532 {
                 }
             }
         }
-            
+        
+        // Put the PN532 back to sleep
         _ncs.write(1);
         return parsedFrame;
     }
     
     function _irqCallback() {
+        // Make sure this was not an IRQ reset
         if(_irq.read() == 0) {
             local parsedFrame = _spiReceiveFrame();
             if(parsedFrame.error != null) {
