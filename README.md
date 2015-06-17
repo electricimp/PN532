@@ -17,11 +17,15 @@ This library currently contains two classes:
 
 Creates and initializes an object representing the PN532 NFC device.
 
-- *spi* should be a [SPI object](https://electricimp.com/docs/api/hardware/spi/) pre-configured with the flags `LSB_FIRST | CLOCK_IDLE_HIGH` and a clock rate.  The PN532 supports clock rates up to 5 MHz.
-- *ncs* should be a pin connected to the PN532's not-chip-select line.
-- *rstpd* should be a pin connected to the PN532's RSTPDN (Reset/Power-Down) pin.
-- *irq* should be a pin connected to the PN532's P70_IRQ pin.
-- *callback* is a function that will be called when object instantiation is complete.  It takes one *error* parameter that is null upon successful instantiation.
+### Parameters
+
+- *spi*: A [SPI object](https://electricimp.com/docs/api/hardware/spi/) pre-configured with the flags `LSB_FIRST | CLOCK_IDLE_HIGH` and a clock rate.  The PN532 supports clock rates up to 5 MHz.
+- *ncs*: A pin connected to the PN532's not-chip-select line.
+- *rstpd*: A pin connected to the PN532's RSTPDN (Reset/Power-Down) pin.
+- *irq*: A pin connected to the PN532's P70_IRQ pin.
+- *callback*: A function that will be called when object instantiation is complete.  It takes one *error* parameter that is null upon successful instantiation.
+
+### Usage
 
 ```squirrel
 #require "PN532.class.nut:1.0.0"
@@ -50,6 +54,8 @@ Configures the PN532 with settings for later use.  The *callback* is called upon
 
 This method must be called whenever the PN532 is power-cycled, but is automatically called by the constructor.
 
+### Usage
+
 ```squirrel
 function initCallback(error) {
     if(error != null) {
@@ -71,10 +77,12 @@ reader.init(initCallback);
 
 Queries the PN532 for its internal firmware version number.
 
-Takes a callback that takes two parameters:
+Takes a *callback* with two parameters:
 
 - *error*: A string that is null on success.
 - *version*: A table that contains fields for *IC*, *Ver*, *Rev*, and *Support* as documented in the `GetFirmwareVersion` command from the [PN532 datasheet](http://www.nxp.com/documents/user_manual/141520.pdf).
+
+### Usage
 
 ```squirrel
 function firmwareVersionCallback(error, version) {
@@ -88,30 +96,30 @@ reader.getFirmwareVersion(firmwareVersionCallback);
 
 Repeatedly searches for nearby NFC tags of type *tagType* and passes scan results to the *callback* upon completion.
 
-*tagType* is an integer representing the baud rate and initialization protocol used during the scan.  It must be taken from the following static class members:
+### Parameters
 
-- `PN532.TAG_TYPE_106_A`: 106 kbps ISO/IEC14443 Type A
-- `PN532.TAG_TYPE_212`: Generic 212 kbps
-- `PN532.TAG_TYPE_424`: Generic 424 kbps
-- `PN532.TAG_TYPE_106_B`: 106 kbps ISO/IEC14443-3B
-- `PN532.TAG_TYPE_106_JEWEL`: 106 kbps Innovision Jewel
+- *tagType*: An integer representing the baud rate and initialization protocol used during the scan.  It must be taken from the following static class members:
 
-Any of the above members can also be combined with the flag `PN532.TAG_FLAG_MIFARE_FELICA` where appropriate to specify that only cards with MIFARE or FeliCa support should be polled.
+ - `PN532.TAG_TYPE_106_A`: 106 kbps ISO/IEC14443 Type A
+ - `PN532.TAG_TYPE_212`: Generic 212 kbps
+ - `PN532.TAG_TYPE_424`: Generic 424 kbps
+ - `PN532.TAG_TYPE_106_B`: 106 kbps ISO/IEC14443-3B
+ - `PN532.TAG_TYPE_106_JEWEL`: 106 kbps Innovision Jewel
 
-*pollAttempts* is an integer representing how many times the PN532 should search for the specified card type. Any value between 0x01 and 0xFE will initiate the corresponding number of polls.  The value 0xFF will poll forever until a card is found.
+    Any of the above members can also be combined with the flag `PN532.TAG_FLAG_MIFARE_FELICA` where appropriate to specify that only cards with MIFARE or FeliCa support should be polled.
+- *pollAttempts*: An integer representing how many times the PN532 should search for the specified card type. Any value between 0x01 and 0xFE will initiate the corresponding number of polls.  The value 0xFF will poll forever until a card is found.
+- *pollPeriod*: An integer controlling the time in between poll attempts.  It indicates units of 150 ms.
+- *callback*: A function with the following parameters:
+ - *error*: A string that is null on success.
+ - *numTagsFounds*: The number of tags found during the scan (currently either 1 or 0)
+ - *tagData*: A table that is non-null only when *numTagsFound* is 1 and contains the following fields:
+     - *type*: The type of tag found.  This corresponds to the tag type specified above except when the `TAG_FLAG_MIFARE_FELICA` flag has not been used, when it will be added if MIFARE or FeliCa support has been detected.
+     - *SENS_RES*: A 2-byte blob representing the SENS_RES/ATQA field of the tag
+     - *SEL_RES*: 1 byte representing the SEL_RES/SAK field of the tag
+     - *NFCID*: A blob representing the semi-unique UID of the tag (usually either 4 or 7 bytes)
+     - *ATS*: The ATS response, if generated by the tag
 
-*pollPeriod* is an integer controlling the time in between poll attempts.  It indicates units of 150 ms.
-
-*callback* is a function with the following arguments:
-
-- *error*: A string that is null on success.
-- *numTagsFounds*: The number of tags found during the scan (currently either 1 or 0)
-- *tagData*: A table that is non-null only when *numTagsFound* is 1 and contains the following fields:
- - *type*: The type of tag found.  This corresponds to the tag type specified above except when the `TAG_FLAG_MIFARE_FELICA` flag has not been used, when it will be added if MIFARE or FeliCa support has been detected.
- - *SENS_RES*: A 2-byte blob representing the SENS_RES/ATQA field of the tag
- - *SEL_RES*: 1 byte representing the SEL_RES/SAK field of the tag
- - *NFCID*: A blob representing the semi-unique UID of the tag (usually either 4 or 7 bytes)
- - *ATS*: The ATS response, if generated by the tag
+### Usage
 
 ```squirrel
 function scanCallback(error, numTagsFound, tagData) {
@@ -140,11 +148,14 @@ reader.pollNearbyTags(PN532.TAG_TYPE_106_A | PN532.TAG_FLAG_MIFARE_FELICA, 0x0A,
 
 Constructs a data exchange frame for use in [PN532.sendRequest()](#sendrequestrequestframe-responsecallback--numretries).
 
-*tagNumber* is the index number of the tag in the current field.  Currently this is always 1.
+### Parameters
 
-*data* is the payload blob for this frame.
+- *tagNumber*: The index number of the tag in the current field.  Currently this is always 1.
+- *data*: The payload blob for this frame.
 
-See the [PN532 datasheet](http://www.nxp.com/documents/user_manual/141520.pdf) for proper use of the data exchange frame.
+See the [PN532 datasheet](http://www.nxp.com/documents/user_manual/141520.pdf) for detailed use of the data exchange frame.
+
+### Usage
 
 ```squirrel
 function makeMifareReadFrame(address) {
@@ -162,11 +173,13 @@ function makeMifareReadFrame(address) {
 Sends the specified *requestFrame* to the PN532 and associates a *responseCallback* to handle the response.  Optionally allows for a maximum number of retries due to transmission failures (defaults to 5).
 
 *requestFrame* must be a frame generated by [PN532.makeDataExchangeFrame()](# pn532makedataexchangeframetagnumber-data).
+### Parameters
 
-*responseCallback* must be a function that takes the following arguments:
+- *responseCallback*: A function that takes the following arguments:
+    - *error*: A string that is null on success.
+    - *responseData*: A blob containing the raw response from the PN532 to the request.
 
-- *error*: A string that is null on success.
-- *responseData*: A blob containing the raw response from the PN532 to the request.
+### Usage
 
 ```squirrel
 function responseCallback(error, responseData) {
@@ -191,6 +204,8 @@ reader.sendRequest(frame, responseCallback);
 
 Associates this class with a previously constructed *pn532* object.
 
+### Usage
+
 ```squirrel
 #require "PN532.class.nut:1.0.0"
 #require "PN532MifareClassic.class.nut:1.0.0"
@@ -205,6 +220,8 @@ mifareReader <- PN532MifareClassic(reader);
 
 A wrapper around the PN532 class's [pollNearbyTags()](#pollnearbytagstagtype-pollattempts-pollperiod-callback) method that configures it to search for MIFARE NFC tags.
 
+### Usage
+
 ```squirrel
 mifareReader.pollNearbyTags(0x0A, 6, scanCallback);
 ```
@@ -213,18 +230,17 @@ mifareReader.pollNearbyTags(0x0A, 6, scanCallback);
 
 Attempts to authenticate the reader to perform operations on a specified EEPROM address.
 
-*tagSerial*: A blob representing the UID of the tag to be authenticated. This UID can be taken from the response to the [pollNearbyTags()](#pollnearbytags-pollattempts-pollperiod-callback) call.
+### Parameters
 
-*address*: The address of the memory block to be authenticated. For the MIFARE Classic 1k, this is an integer in the range 0-63.
+- *tagSerial*: A blob representing the UID of the tag to be authenticated. This UID can be taken from the response to the [pollNearbyTags()](#pollnearbytags-pollattempts-pollperiod-callback) call.
+- *address*: The address of the memory block to be authenticated. For the MIFARE Classic 1k, this is an integer in the range 0-63.
+- *aOrB*: The key type to authenticate against.  The options are the static class members `PN532MifareClassic.AUTH_TYPE_A` and `PN532MifareClassic.AUTH_TYPE_B`.
+- *key*: The key to use when authenticating for the given block.  If no key has been set, set this parameter to null to use the default FFFFFFFFFFFFh value.
+- *callback*: A function taking the following arguments:
+    - *error*: A string that is null on success.
+    - *status*: A boolean that is set to true if the authentication succeeded.
 
-*aOrB*: The key type to authenticate against.  The options are the static class members `PN532MifareClassic.AUTH_TYPE_A` and `PN532MifareClassic.AUTH_TYPE_B`.
-
-*key*: The key to use when authenticating for the given block.  If no key has been set, set this parameter to null to use the default FFFFFFFFFFFFh value.
-
-*callback*: A function taking the following arguments:
-
-- *error*: A string that is null on success.
-- *status*: A boolean that is set to true if the authentication succeeded.
+### Usage
 
 ```squirrel
 function authCallback(error, status) {
@@ -252,6 +268,8 @@ Reads 16 bytes from the *address* specified on the currently authenticated tag.
 
 Note that this call will fail with an error if the address being read has not previously been authenticated.
 
+### Usage
+
 ```squirrel
 // ...authenticate the address...
 
@@ -273,6 +291,8 @@ Writes 16 bytes of blob *data* to the *address* specified on the currently authe
 *callback* is a function taking an *error* string that is null on success.
 
 Note that this call will fail with an error if the address being read has not previously been authenticated or if *data* is not exactly 16 bytes long.  
+
+### Usage
 
 ```squirrel
 // ...authenticate the address...
