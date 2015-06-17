@@ -12,8 +12,7 @@ class PN532MifareClassic {
     static AUTH_TYPE_B = "B";
 
     static AUTH_ERROR = 0x14;
-    static STATUS_OK = 0;
-    
+
     static BLOCK_LENGTH = 16;
     
     _pn532 = null;
@@ -101,7 +100,7 @@ class PN532MifareClassic {
             responseData.readn('b');
             
             local status = responseData.readn('b');
-            if(status == STATUS_OK) {
+            if(status == PN532.STATUS_OK) {
                 imp.wakeup(0, function() {
                     userCallback(null, true);
                 });
@@ -128,7 +127,7 @@ class PN532MifareClassic {
             responseData.readn('b');
             
             local status = responseData.readn('b');
-            if(status == STATUS_OK) {
+            if(status == PN532.STATUS_OK) {
                 local readData = responseData.readblob(BLOCK_LENGTH); // DataIn has max length of 16
                 imp.wakeup(0, function() {
                     userCallback(null, readData);
@@ -157,7 +156,7 @@ class PN532MifareClassic {
             responseData.readn('b');
             
             local status = responseData.readn('b');
-            if(status == STATUS_OK) {
+            if(status == PN532.STATUS_OK) {
                 imp.wakeup(0, function() {
                     userCallback(null);
                 });                

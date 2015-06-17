@@ -13,6 +13,7 @@ class PN532 {
     
     static COMMAND_GET_FIRMWARE_VERSION = 0x02;
     static COMMAND_SAM_CONFIGURATION = 0x14;
+    static COMMAND_POWER_DOWN = 0x16;
     static COMMAND_RF_CONFIGURATION = 0x32;
     static COMMAND_IN_DATA_EXCHANGE = 0x40;
     static COMMAND_IN_AUTOPOLL = 0x60;
@@ -24,12 +25,17 @@ class PN532 {
     static TAG_TYPE_106_JEWEL = 0x04;
     static TAG_FLAG_MIFARE_FELICA = 0x10;
     
+    static STATUS_OK = 0;
+    
+    static WAKEUP_TIME = 0.002;
+    
     _spi = null;
     _ncs = null; // Not Chip Select
     _rstpd = null; // Reset and Power-Down
     _irq = null;
     _messageInTransit = null;
-    
+    _powerSaveEnabled = null;
+
     function constructor(spi, ncs, rstpd, irq, callback) {
         _spi = spi;
         
@@ -46,6 +52,8 @@ class PN532 {
             "responseCallback" : null,
             "cancelAckTimer" : null
         };
+        
+        _powerSaveEnabled = false;
         
         _rstpd = rstpd;
         _rstpd.configure(DIGITAL_OUT, 1); // Start high - powered up
@@ -70,6 +78,15 @@ class PN532 {
             });
         });
     };
+    
+    function enablePowerSaveMode(shouldEnable, callback=null) {
+        _powerSaveEnabled = shouldEnable;
+        if(shouldEnable && callback != null) {
+            // Send true as the response value because it's easier than adding a separate flow for a single-argument callback
+            local responseCallback = _getPowerDownResponseCallback(true, callback);
+            _sendPowerDownRequest(3, responseCallback);
+        }
+    }
     
     function getFirmwareVersion(callback) {
         local responseCallback = _getFirmwareVersionCallback(callback);
@@ -111,19 +128,13 @@ class PN532 {
         return _makeInformationFrame(frame);
     }
     
-    function sendRequest(requestFrame, responseCallback, numRetries=5) {
-        // Do not let a new message be sent if there is a currently pending one
-        if(_messageInTransit.responseCallback == null) {
-            _messageInTransit.responseCallback = responseCallback;
-            _spiSendFrame(SPI_OP_DATA_WRITE, requestFrame, function(){
-                local cancelAckTimer = _startAckTimer(requestFrame, responseCallback, numRetries);
-                _messageInTransit.cancelAckTimer = cancelAckTimer;
-            }.bindenv(this));
-        } else {
-            imp.wakeup(0, function() {
-                responseCallback("Could not run command, previous command not completed.", null);
-            });            
+    function sendRequest(requestFrame, responseCallback, numRetries=3) {
+        local effectiveResponseCallback = responseCallback;
+        if(_powerSaveEnabled) {
+            effectiveResponseCallback = _getPowerDownSenderCallback(numRetries, responseCallback);
         }
+        
+        _sendRequestWithoutPowerDown(requestFrame, effectiveResponseCallback, numRetries);
     }
     
     // -------------------- PRIVATE METHODS -------------------- //
@@ -203,10 +214,74 @@ class PN532 {
             });
         };
     }
+    
+    // This callback ensures that the power down command is sent after a primary command
+    function _getPowerDownSenderCallback(numRetries, userCallback) {
+        return function(error, response) {
+            if(error != null) {
+                imp.wakeup(0, function() {
+                    userCallback(error, null);
+                });
+            }
+            
+            // Save the response and run the power down command
+            local callback = _getPowerDownResponseCallback(response, userCallback);
+            _sendPowerDownRequest(numRetries, callback)
+        };
+    }
+    
+    // This callback ensures that the response from the primary command is sent to the original user callback
+    function _getPowerDownResponseCallback(primaryCommandResponse, userCallback) {
+        return function(error, response) {
+            if(error != null) {
+                imp.wakeup(0, function() {
+                    userCallback(error, null);
+                });
+            }
+            
+            // Read application-level status to ensure power-down was successful
+            local status = response[1];
+            if(status != STATUS_OK) {
+                imp.wakeup(0, function() {
+                    userCallback("Power-down error: " + status, primaryCommandResponse);
+                });
+            }
+            
+            // PN532 takes 1ms to go into power down mode
+            imp.sleep(0.001);
+            
+            imp.wakeup(0, function() {
+                // Finally, send the user the response we've been holding onto
+                userCallback(null, primaryCommandResponse);
+            });
+        };
+    }
 
     /***** APPLICATION LAYER COMMUNICATION *****/
+    
+    function _sendRequestWithoutPowerDown(requestFrame, responseCallback, numRetries) {
+        // Do not let a new message be sent if there is a currently pending one
+        if(_messageInTransit.responseCallback == null) {
+            _messageInTransit.responseCallback = responseCallback;
+            _spiSendFrame(SPI_OP_DATA_WRITE, requestFrame, function(){
+                local cancelAckTimer = _startAckTimer(requestFrame, responseCallback, numRetries);
+                _messageInTransit.cancelAckTimer = cancelAckTimer;
+            }.bindenv(this));
+        } else {
+            imp.wakeup(0, function() {
+                responseCallback("Could not run command, previous command not completed.", null);
+            });            
+        }
+    }
+    
+    function _sendPowerDownRequest(numRetries, responseCallback) {
+        local wakeupEnable = 32; // Only enable wakeup on SPI signal
         
-        return _makeInformationFrame(frame);
+        local dataBlob = blob(1);
+        dataBlob.writen(wakeupEnable, 'b');
+        
+        local frame = makeCommandFrame(COMMAND_POWER_DOWN, dataBlob);
+        _sendRequestWithoutPowerDown(frame, responseCallback, numRetries);
     }
 
     // Encapsulates the payload blob in an information frame
@@ -260,7 +335,7 @@ class PN532 {
         
         // Wake up the PN532 and give it time to set up
         _ncs.write(0);
-        imp.sleep(0.002);
+        imp.sleep(WAKEUP_TIME);
         
         _spi.write(format("%c", spiOp));
         _spi.write(frame);
@@ -290,7 +365,7 @@ class PN532 {
 
         // Wake up the PN532 and give it time to set up
         _ncs.write(0);
-        imp.sleep(0.002);
+        imp.sleep(WAKEUP_TIME);
 
         // Formally request the incoming frame
         _spi.write(format("%c", SPI_OP_DATA_READ));

@@ -74,6 +74,27 @@ rstpd.write(1);
 reader.init(initCallback);
 ```
 
+## enablePowerSaveMode(shouldEnable [, callback])
+
+Enables or disables a power-saving mode on the PN532.  This mode will apply to all future commands on the PN532 until it is disabled with another call to this method.  Use of power-save mode will add a 1-ms latency to all commands sent, but significantly decreases power consumption.
+
+When *shouldEnable* is true, *callback* must exist and take the following parameters:
+
+- *error*: A string that is null on success.
+- *wasEnabled*: A boolean that will only be true on success.
+
+When *shouldEnable* is false, the callback is optional and will be ignored.
+
+### Usage
+
+```squirrel
+function powerSaveCallback(error, succeeded) {
+        // Continue using PN532 with lower power usage 
+}
+
+reader.enablePowerSaveMode(true, powerSaveCallback);
+```
+
 ## getFirmwareVersion(*callback*)
 
 Queries the PN532 for its internal firmware version number.
