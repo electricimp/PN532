@@ -96,7 +96,6 @@ class PN532 {
     }
     
     function pollNearbyTags(tagType, pollAttempts, pollPeriod, callback) {
-        
         local dataBlob = blob(3);
         
         dataBlob.writen(pollAttempts, 'b');
@@ -164,7 +163,7 @@ class PN532 {
         return function(error, responseData) {
             if(error != null) {
                 imp.wakeup(0, function() {
-                   userCallback(error, null); 
+                   userCallback(error, null, null); 
                 });
                 return;
             }
@@ -222,6 +221,7 @@ class PN532 {
                 imp.wakeup(0, function() {
                     userCallback(error, null);
                 });
+                return;
             }
             
             // Save the response and run the power down command
@@ -237,6 +237,7 @@ class PN532 {
                 imp.wakeup(0, function() {
                     userCallback(error, null);
                 });
+                return;
             }
             
             // Read application-level status to ensure power-down was successful
@@ -245,6 +246,7 @@ class PN532 {
                 imp.wakeup(0, function() {
                     userCallback("Power-down error: " + status, primaryCommandResponse);
                 });
+                return;
             }
             
             // PN532 takes 1ms to go into power down mode

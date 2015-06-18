@@ -20,7 +20,7 @@ class PN532CardEmulator {
         // Construct payload
         local generalBodyLength = generalBody == null ? 0 : generalBody.len();
         
-        local baseModePayloadLength = 26;
+        local basePayloadLength = 26;
         local dataBlob = blob(basePayloadLength + generalBodyLength);
         dataBlob.writen(mode, 'b');
         dataBlob.writeblob(mifareParams);
