@@ -208,7 +208,6 @@ class PN532 {
                 local atsFrameExists = responseData.tell() < responseData.len();
                 if(atsFrameExists) {
                     local atsFrameLength = responseData.readn('b');
-                    server.log("ATS FRAME LENGTH: " + atsFrameLength);
                     atsFrame = responseData.readblob(atsFrameLength);
                 }
                 
@@ -421,8 +420,6 @@ class PN532 {
         if(_irq.read() == 0) {
             local parsedFrame = _spiReceiveFrame();
             if(parsedFrame.error != null) {
-                server.log("Error: " + parsedFrame.error);
-                server.log("Sending NACK");
                 local nackFrame = _makeNackFrame();
                 _spiSendFrame(SPI_OP_DATA_WRITE, nackFrame);
                 return;
@@ -449,6 +446,10 @@ class PN532 {
             _messageInTransit.responseCallback = null;
             if(numRetries > 0) {
                 sendRequest(requestFrame, responseCallback, true, numRetries - 1);
+            } else {
+                imp.wakeup(0, function() {
+                    responseCallback("Message transmission failed", null);
+                });
             }
         }.bindenv(this));
         
