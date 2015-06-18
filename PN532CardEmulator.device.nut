@@ -35,7 +35,7 @@ class PN532CardEmulator {
         
         local responseCallback = _getInitCallback(onSelect);
         local frame = PN532.makeCommandFrame(COMMAND_INIT_AS_TARGET, dataBlob);
-        _pn532.sendRequest(frame, responseCallback.bindenv(this));
+        _pn532.sendRequest(frame, responseCallback.bindenv(this), true);
     }
     
     // Convenience method to package required data in an array

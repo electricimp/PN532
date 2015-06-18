@@ -76,7 +76,9 @@ reader.init(initCallback);
 
 ## enablePowerSaveMode(shouldEnable [, callback])
 
-Enables or disables a power-saving mode on the PN532.  This mode will apply to all future commands on the PN532 until it is disabled with another call to this method.  Use of power-save mode will add a 1-ms latency to all commands sent, but significantly decreases power consumption.
+Enables or disables a power-saving mode on the PN532.  This mode will apply to all future commands on the PN532 until it is disabled with another call to this method.  Use of power-save mode will add a 1 ms latency to all commands sent, but significantly decreases power consumption.
+
+Note that even if this is set, power save mode will not be entered after certain commands (such as [pollNearbyTags(*tagType, pollAttempts, pollPeriod, callback*)](#pollnearbytagstagtype-pollattempts-pollperiod-callback)) that require state to be stored on the PN532.  This is automatically handled by the class and power save mode will be re-entered when a compatible command is run.
 
 When *shouldEnable* is true, *callback* must exist and take the following parameters:
 
@@ -207,13 +209,13 @@ See the [PN532 datasheet](http://www.nxp.com/documents/user_manual/141520.pdf) f
 function getFirmwareVersion(callback) {
     local frame = PN532.makeCommandFrame(0x02);
 
-    PN532.sendRequest(frame, callback);
+    PN532.sendRequest(frame, callback, true);
 }
 ```
 
-## sendRequest(*requestFrame, responseCallback [, numRetries]*)
+## sendRequest(*requestFrame, responseCallback, shouldRespectPowerSave [, numRetries]*)
 
-Sends the specified *requestFrame* to the PN532 and associates a *responseCallback* to handle the response.  Optionally allows for a maximum number of retries due to transmission failures (defaults to 5).
+Sends the specified *requestFrame* to the PN532 and associates a *responseCallback* to handle the response.  Optionally allows for a maximum number of retries due to transmission failures.
 
 ### Parameters
 
@@ -221,6 +223,8 @@ Sends the specified *requestFrame* to the PN532 and associates a *responseCallba
 - *responseCallback*: A function that takes the following arguments:
     - *error*: A string that is null on success.
     - *responseData*: A blob containing the raw response from the PN532 to the request.
+- *shouldRespectPowerSave*: A boolean representing whether this request should respect the power save mode state set in [enablePowerSaveMode(*shouldEnable [, callback]*)](#enablepowersavemodeshouldenable--callback). If false, this request will not initiate a power-down after the request. Most calls should try to respect the state, but calls that require state to be stored in the PN532 between commands cannot use it.
+- *numRetries*: An optional integer defaulting to 3.
 
 ### Usage
 
@@ -238,7 +242,7 @@ function responseCallback(error, responseData) {
 }
 
 local frame = makeMifareReadFrame(0x3);
-reader.sendRequest(frame, responseCallback);  
+reader.sendRequest(frame, responseCallback, false);  
 ```
 
 # PN532 MIFARE Classic Class

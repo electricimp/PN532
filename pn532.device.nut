@@ -76,7 +76,7 @@ class PN532 {
             imp.wakeup(0, function() {
                callback(error); 
             });
-        });
+        }, true);
     };
     
     function enablePowerSaveMode(shouldEnable, callback=null) {
@@ -92,7 +92,7 @@ class PN532 {
         local responseCallback = _getFirmwareVersionCallback(callback);
         local frame = makeCommandFrame(COMMAND_GET_FIRMWARE_VERSION);
 
-        sendRequest(frame, responseCallback);
+        sendRequest(frame, responseCallback, true);
     }
     
     function pollNearbyTags(tagType, pollAttempts, pollPeriod, callback) {
@@ -104,7 +104,7 @@ class PN532 {
 
         local responseCallback = _getPollTagsCallback(callback);
         local frame = makeCommandFrame(COMMAND_IN_AUTOPOLL, dataBlob);
-        sendRequest(frame, responseCallback);
+        sendRequest(frame, responseCallback, false);
     }
     
     static function makeDataExchangeFrame(tagNumber, data) {
@@ -127,13 +127,26 @@ class PN532 {
         return _makeInformationFrame(frame);
     }
     
-    function sendRequest(requestFrame, responseCallback, numRetries=3) {
-        local effectiveResponseCallback = responseCallback;
-        if(_powerSaveEnabled) {
-            effectiveResponseCallback = _getPowerDownSenderCallback(numRetries, responseCallback);
-        }
+    function sendRequest(requestFrame, responseCallback, shouldRespectPowerSave, numRetries=3) {
         
-        _sendRequestWithoutPowerDown(requestFrame, effectiveResponseCallback, numRetries);
+        // Do not let a new message be sent if there is a currently pending one
+        if(_messageInTransit.responseCallback == null) {
+            
+            local effectiveResponseCallback = responseCallback;
+            if(_powerSaveEnabled && shouldRespectPowerSave) {
+                effectiveResponseCallback = _getPowerDownSenderCallback(numRetries, responseCallback);
+            }
+            
+            _messageInTransit.responseCallback = effectiveResponseCallback;
+            _spiSendFrame(SPI_OP_DATA_WRITE, requestFrame, function(){
+                local cancelAckTimer = _startAckTimer(requestFrame, effectiveResponseCallback, numRetries);
+                _messageInTransit.cancelAckTimer = cancelAckTimer;
+            }.bindenv(this));
+        } else {
+            imp.wakeup(0, function() {
+                responseCallback("Could not run command, previous command not completed.", null);
+            });            
+        }
     }
     
     // -------------------- PRIVATE METHODS -------------------- //
@@ -261,21 +274,6 @@ class PN532 {
 
     /***** APPLICATION LAYER COMMUNICATION *****/
     
-    function _sendRequestWithoutPowerDown(requestFrame, responseCallback, numRetries) {
-        // Do not let a new message be sent if there is a currently pending one
-        if(_messageInTransit.responseCallback == null) {
-            _messageInTransit.responseCallback = responseCallback;
-            _spiSendFrame(SPI_OP_DATA_WRITE, requestFrame, function(){
-                local cancelAckTimer = _startAckTimer(requestFrame, responseCallback, numRetries);
-                _messageInTransit.cancelAckTimer = cancelAckTimer;
-            }.bindenv(this));
-        } else {
-            imp.wakeup(0, function() {
-                responseCallback("Could not run command, previous command not completed.", null);
-            });            
-        }
-    }
-    
     function _sendPowerDownRequest(numRetries, responseCallback) {
         local wakeupEnable = 32; // Only enable wakeup on SPI signal
         
@@ -283,7 +281,7 @@ class PN532 {
         dataBlob.writen(wakeupEnable, 'b');
         
         local frame = makeCommandFrame(COMMAND_POWER_DOWN, dataBlob);
-        _sendRequestWithoutPowerDown(frame, responseCallback, numRetries);
+        sendRequest(frame, responseCallback, false, numRetries);
     }
 
     // Encapsulates the payload blob in an information frame
@@ -431,16 +429,14 @@ class PN532 {
             }
             
             if(parsedFrame.type == FRAME_TYPE_ACK) {
-                    _messageInTransit.cancelAckTimer();
-            } else {
-                if(parsedFrame.type == FRAME_TYPE_APPLICATION_ERROR) {
-                    parsedFrame.error = "Device Application Error";
-                }
-                if(_messageInTransit.responseCallback != null) {
-                    local savedResponseCallback = _messageInTransit.responseCallback;
-                    _messageInTransit.responseCallback = null;
-                    savedResponseCallback(parsedFrame.error, parsedFrame.data);
-                }
+                _messageInTransit.cancelAckTimer();
+            } else if(parsedFrame.type == FRAME_TYPE_APPLICATION_ERROR) {
+                parsedFrame.error = "Device Application Error";
+            } else if(_messageInTransit.responseCallback != null) {
+                // If there is a callback, run and clear it
+                local savedResponseCallback = _messageInTransit.responseCallback;
+                _messageInTransit.responseCallback = null;
+                savedResponseCallback(parsedFrame.error, parsedFrame.data);
             }
         }
     }
@@ -452,7 +448,7 @@ class PN532 {
             // clear old callback and retry if it's worthwhile
             _messageInTransit.responseCallback = null;
             if(numRetries > 0) {
-                sendRequest(requestFrame, responseCallback, numRetries - 1);
+                sendRequest(requestFrame, responseCallback, true, numRetries - 1);
             }
         }.bindenv(this));
         
