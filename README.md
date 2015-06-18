@@ -4,13 +4,13 @@ This library allows for integration of NXP's [PN532/C106 NFC Module](http://www.
 
 This library currently contains three classes:
 
-- The [`PN532`](#PN532) class contains the base code needed to initialize the PN532, communicate with it, and read from generic NFC tags.
+- The [`PN532`](#PN532) class contains the base code needed to initialize the PN532, communicate with it, read from generic NFC tags, and enable power-saving features.
 - The [`PN532MifareClassic`](#PN532_MiFare_Classic) class contains functions needed to read and write to [MIFARE Classic](http://www.nxp.com/products/identification_and_security/smart_card_ics/mifare_smart_card_ics/mifare_classic/) tags, which support read/write storage.  It also serves as an example of how to build on the `PN532` class to interface with the many other protocols and features that the PN532 supports.
 - The [`PN532CardEmulator`](#pn532_card_emulator) class contains functions needed to operate in a generic card emulation mode.  It also serves as an example of how to build on the `PN532` class to interface with the many other protocols and features that the PN532 supports.
 
 ### Examples
 
-(TODO)
+For an example of using the `PN532MifareClassic` class to build an ID card reader, see the [MIFARE reader example](examples/MIFARE).
 
 # PN532 Class
 
