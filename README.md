@@ -377,17 +377,16 @@ local reader = PN532(spi, nss, rstpd, irq, constructorCallback);
 cardEmulator <- PN532CardEmulator(reader);
 ```
 
-## enterTargetMode(*mifareParams, felicaParams, nfcId3t, generalBody, onSelect*)
+## enterTargetMode(*mifareParams, felicaParams, nfcId3, generalBody, onSelect*)
 
 Puts the PN532 in target/card emulation mode.  In this mode, it will appear to be an NFC tag to other readers.
 
 ### Parameters
 
-- *mifareParams*: The data necessary to be activated at 106 kbps
-in passive mode.  This should be constructed with a call to [`PN532CardEmulator.makeMifareParams(sensRes, nfcId1t, selRes)`](#pn532cardemulatormakemifareparamssensres-nfcid1t-selres).
+- *mifareParams*: The data necessary to be activated at 106 kbps in passive mode.  This should be constructed with a call to [`PN532CardEmulator.makeMifareParams(sensRes, nfcId1, selRes)`](#pn532cardemulatormakemifareparamssensres-nfcid1-selres).
 - *felicaParams*: The data necessary to be activated at 212/424 kbps in passive mode.
-This should be constructed with a call to [`PN532CardEmulator.makeFelicaParams(nfcId2t, pad, systemCode)`](#pn532cardemulatormakefelicaparamsnfcid2t-pad-systemcode)).
-- *nfcId3t*: A 10-byte blob and is used in the ATR_RES value.
+This should be constructed with a call to [`PN532CardEmulator.makeFelicaParams(nfcId2, pad, systemCode)`](#pn532cardemulatormakefelicaparams(nfcid2-pad-systemcode)).
+- *nfcId3*: A 10-byte blob and is used in the ATR_RES value.
 - *generalBody*: The (optional) general data to be used in the ATR_RES value.  If this is set to null, it will be left out.
 - *onSelect*: A callback that will be called when the PN532 has been activated by an external reader.  It has the following arguments:
     - *error*: A string that is null on success.
@@ -395,7 +394,7 @@ This should be constructed with a call to [`PN532CardEmulator.makeFelicaParams(n
         - *baud*: An integer representing the baud rate.
         - *isPicc*: A boolean indicating whether ISO/IEC 14443-4 PICC mode has been activated.
         - *isDep*: A boolean indicating whether DEP mode has been activated.
-        - "isActive": A boolean indicating whether the PN532 has been activated in active mode. If false, MIFARE/FeliCa framing is in use.
+        - *isActive*: A boolean indicating whether the PN532 has been activated in active mode. If false, MIFARE/FeliCa framing is in use.
     - *initiatorCommand*: A blob containing the first frame received by the PN532 from the initiator.
 
 ### Usage
@@ -414,22 +413,22 @@ function onSelect(error, mode, initiatorCommand) {
 }
 
 // Make a dummy NFC ID
-blob nfcId3t = blob(10);
+blob nfcId3 = blob(10);
 for(local i = 0; i < 10; i++) {
     nfcId3t[i] = i;
 }
 
-cardEmulator.enterTargetMode(mifareParams, felicaParams, nfcId3t, null, onSelect);
+cardEmulator.enterTargetMode(mifareParams, felicaParams, nfcId3, null, onSelect);
 ```
 
-## PN532CardEmulator.makeMifareParams(sensRes, nfcId1t, selRes)
+## PN532CardEmulator.makeMifareParams(sensRes, nfcId1, selRes)
 
-Constructs the *mifareParams* argument for calls to [`enterTargetMode(mifareParams, felicaParams, nfcId3t, generalBody, onSelect)`](#entertargetmodemifareparams-felicaparams-nfcid3t-generalbody-onselect).
+Constructs the *mifareParams* argument for calls to [`enterTargetMode(mifareParams, felicaParams, nfcId3, generalBody, onSelect)`](#entertargetmodemifareparams-felicaparams-nfcid3-generalbody-onselect).
 
 ### Parameters
 
 - *sensRes*: An integer representing the 2-byte (LSB-first) SENS_RES/ATQA value.
-- *nfcId1t*: A 3-byte blob.
+- *nfcId1*: A 3-byte blob.
 - *selRes*: An integer representing the 1-byte SEL_RES/SAK value.
 
 ### Usage
@@ -438,25 +437,25 @@ Constructs the *mifareParams* argument for calls to [`enterTargetMode(mifarePara
 local sensRes = 8; // two bytes are [0x00, 0x08]
 
 // Make a dummy NFC ID
-local nfcId1t = blob(3);
-nfcId1t[0] = 1;
-nfcId1t[1] = 2;
-nfcId1t[2] = 3;
+local nfcId1 = blob(3);
+nfcId1[0] = 1;
+nfcId1[1] = 2;
+nfcId1[2] = 3;
 
 local selRes = 0x40;
 
-local mifareParams = PN532CardEmulator.makeMifareParams(sensRes, nfcId1t, selRes);
+local mifareParams = PN532CardEmulator.makeMifareParams(sensRes, nfcId1, selRes);
 
-cardEmulator.enterTargetMode(mifareParams, felicaParams, nfcId3t, null, onSelect);
+cardEmulator.enterTargetMode(mifareParams, felicaParams, nfcId3, null, onSelect);
 ```
 
-## PN532CardEmulator.makeFelicaParams(nfcId2t, pad, systemCode)
+## PN532CardEmulator.makeFelicaParams(nfcId2, pad, systemCode)
 
-Constructs the *felicaParams* argument for calls to [`enterTargetMode(mifareParams, felicaParams, nfcId3t, generalBody, onSelect)`](#entertargetmodemifareparams-felicaparams-nfcid3t-generalbody-onselect).
+Constructs the *felicaParams* argument for calls to [`enterTargetMode(mifareParams, felicaParams, nfcId3, generalBody, onSelect)`](#entertargetmodemifareparams-felicaparams-nfcid3-generalbody-onselect).
 
 ### Parameters
 
-- *nfcId2t*: An 8-byte blob.
+- *nfcId2*: An 8-byte blob.
 - *PAD*: An 8-btye blob.
 - *systemCode*: An integer representing the 2-byte value used in the POL_RES frame.
 
@@ -464,9 +463,9 @@ Constructs the *felicaParams* argument for calls to [`enterTargetMode(mifarePara
 
 ```squirrel
 // Make a dummy NFC ID
-local nfcId2t = blob(8);
+local nfcId2 = blob(8);
 for(local i = 0; i < 8; i++) {
-    nfcId2t[i] = 2;
+    nfcId2[i] = 2;
 }
 
 local pad = blob(8);
@@ -476,9 +475,9 @@ for(local i = 0; i < 8; i++) {
 
 local systemCode = 0xFFFF;
 
-local felicaParams = PN532CardEmulator.makeFelicaParams(nfcId2t, pad, systemCode);
+local felicaParams = PN532CardEmulator.makeFelicaParams(nfcId2, pad, systemCode);
 
-cardEmulator.enterTargetMode(mifareParams, felicaParams, nfcId3t, null, onSelect);
+cardEmulator.enterTargetMode(mifareParams, felicaParams, nfcId3, null, onSelect);
 ```
 
 # License

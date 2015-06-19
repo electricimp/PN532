@@ -13,7 +13,7 @@ class PN532CardEmulator {
         _pn532 = pn532;
     }
     
-    function enterTargetMode(mifareParams, felicaParams, nfcId3t, generalBody, onSelect) {
+    function enterTargetMode(mifareParams, felicaParams, nfcId3, generalBody, onSelect) {
         // Set no restriction on who can target us
         local mode = 0;
         
@@ -25,7 +25,7 @@ class PN532CardEmulator {
         dataBlob.writen(mode, 'b');
         dataBlob.writeblob(mifareParams);
         dataBlob.writeblob(felicaParams);
-        dataBlob.writeblob(nfcId3t);
+        dataBlob.writeblob(nfcId3);
         dataBlob.writen(generalBodyLength, 'b');
         if(generalBody != null) {
             dataBlob.writeblob(generalBody);
@@ -39,18 +39,18 @@ class PN532CardEmulator {
     }
     
     // Convenience method to package required data in an array
-    static function makeMifareParams(sensRes, nfcId1t, selRes) {
+    static function makeMifareParams(sensRes, nfcId1, selRes) {
         local params = blob(6);
         params.writen(sensRes, 'w');
-        params.writeblob(nfcId1t);
+        params.writeblob(nfcId1);
         params.writen(selRes, 'b');
         return params;
     }
 
     // Convenience method to package required data in an array
-    static function makeFelicaParams(nfcId2t, pad, systemCode) {
+    static function makeFelicaParams(nfcId2, pad, systemCode) {
         local params = blob(18);
-        params.writeblob(nfcId2t);
+        params.writeblob(nfcId2);
         params.writeblob(pad);
         params.writen(systemCode, 'w');
         return params;
