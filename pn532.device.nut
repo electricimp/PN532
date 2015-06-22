@@ -31,12 +31,12 @@ class PN532 {
     
     _spi = null;
     _ncs = null; // Not Chip Select
-    _rstpd = null; // Reset and Power-Down
+    _rstpdn = null; // Reset and Power-Down
     _irq = null;
     _messageInTransit = null;
     _powerSaveEnabled = null;
 
-    function constructor(spi, ncs, rstpd, irq, callback) {
+    function constructor(spi, ncs, rstpdn, irq, callback) {
         _spi = spi;
         
         _ncs = ncs;
@@ -55,9 +55,13 @@ class PN532 {
         
         _powerSaveEnabled = false;
         
-        _rstpd = rstpd;
-        _rstpd.configure(DIGITAL_OUT, 1); // Start high - powered up
-        imp.sleep(0.1);
+        _rstpdn = rstpdn;
+        if(_rstpdn != null) {
+            _rstpdn.configure(DIGITAL_OUT, 1); // Start high - powered up
+        }
+        
+        // Give time to wake up
+        imp.sleep(WAKEUP_TIME);
         
         init(callback);
     }
@@ -78,6 +82,27 @@ class PN532 {
             });
         }, true);
     };
+    
+    function setHardPowerDown(poweredDown, callback) {
+        // Control the power going into the PN532
+        if(_rstpdn != null) {
+            _rstpdn.write(poweredDown ? 0 : 1);
+            
+            if(poweredDown) {
+                imp.wakeup(0, function() {
+                   callback(null); 
+                });
+            } else {
+                // Give time to wake up
+                imp.sleep(WAKEUP_TIME);
+                init(callback);
+            }
+        } else {
+            imp.wakeup(0, function() {
+                callback("No RSTPDN pin given");
+            });
+        }
+    }
     
     function enablePowerSaveMode(shouldEnable, callback=null) {
         _powerSaveEnabled = shouldEnable;

@@ -22,7 +22,7 @@ Creates and initializes an object representing the PN532 NFC device.
 
 - *spi*: A [SPI object](https://electricimp.com/docs/api/hardware/spi/) pre-configured with the flags `LSB_FIRST | CLOCK_IDLE_HIGH` and a clock rate.  The PN532 supports clock rates up to 5 MHz.
 - *ncs*: A pin connected to the PN532's not-chip-select line.
-- *rstpd*: A pin connected to the PN532's RSTPDN (Reset/Power-Down) pin.
+- *rstpd*: A pin connected to the PN532's RSTPDN (Reset/Power-Down) pin.  This can be null if this the RSTPDN pin will not be under software control.
 - *irq*: A pin connected to the PN532's P70_IRQ pin.
 - *callback*: A function that will be called when object instantiation is complete.  It takes one *error* parameter that is null upon successful instantiation.
 
@@ -74,7 +74,40 @@ rstpd.write(1);
 reader.init(initCallback);
 ```
 
-## enablePowerSaveMode(shouldEnable [, callback])
+## setHardPowerDown(*poweredDown, callback*)
+
+Enables or disables power to the PN532 using the *rstpdn* pin passed to the constructor.
+
+This produces a greater power savings than using [enablePowerSaveMode(*shouldEnable [, callback]*)](#enablepowersavemodeshouldenable--callback), but wipes all device state and must be explicitly turned off before the PN532 can be used again.  It will automatically call [init(*callback*)](#initcallback) upon power-up.
+
+The *callback* is called upon completion and takes one *error* parameter that is null on success.
+
+If the *rstpdn* pin was not passed to the constructor, the callback will return an error.
+
+### Usage
+
+```squirrel
+reader.setHardPowerDown(true, function(error) {
+    if(error != null) {
+        server.log(error);
+        return;
+    }
+    
+    // Spend a long time doing things that don't require the PN532...
+    
+    reader.setHardPowerDown(false, function(error) {
+        if(error != null) {
+            server.log(error);
+            return;
+        }
+        
+        // Continue using the PN532 from here
+    });
+
+});
+```
+
+## enablePowerSaveMode(*shouldEnable [, callback]*)
 
 Enables or disables a power-saving mode on the PN532.  This mode will apply to all future commands on the PN532 until it is disabled with another call to this method.  Use of power-save mode will add a 1 ms latency to all commands sent, but significantly decreases power consumption.
 
