@@ -25,14 +25,14 @@ function pollCallback(error, numTagsFound, tagData) {
     }
         
     if(numTagsFound > 0 && isMifareClassic1k(tagData)) {
-        mifareReader.authenticate(tagData.NFCID, 0x2, PN532MifareClassic.AUTH_TYPE_A, null, function(error, authenticated) {
+        mifareReader.authenticate(tagData.NFCID, USER_ID_ADDRESS, PN532MifareClassic.AUTH_TYPE_A, null, function(error, authenticated) {
             if(error != null) {
                 server.error(error);
                 return;
             }
             
             if(authenticated) {
-                mifareReader.read(0x2, function(error, data) {
+                mifareReader.read(USER_ID_ADDRESS, function(error, data) {
                     if(error != null) {
                         server.error(error);
                         return;
