@@ -29,6 +29,11 @@ class PN532 {
     
     static WAKEUP_TIME = 0.002;
     
+    static ERROR_NO_RSTPDN = "No RSTPDN pin given";
+    static ERROR_CONCURRENT_COMMANDS = "Could not run command, previous command not completed";
+    static ERROR_TRANSMIT_FAILURE = "Message transmission failed";
+    static ERROR_DEVICE_APPLICATION = "Device Application Error";
+    
     _spi = null;
     _ncs = null; // Not Chip Select
     _rstpdn = null; // Reset and Power-Down
@@ -99,7 +104,7 @@ class PN532 {
             }
         } else {
             imp.wakeup(0, function() {
-                callback("No RSTPDN pin given");
+                callback(ERROR_NO_RSTPDN);
             });
         }
     }
@@ -169,7 +174,7 @@ class PN532 {
             }.bindenv(this));
         } else {
             imp.wakeup(0, function() {
-                responseCallback("Could not run command, previous command not completed.", null);
+                responseCallback(ERROR_CONCURRENT_COMMANDS, null);
             });            
         }
     }
@@ -398,7 +403,7 @@ class PN532 {
         local frameBeginning = _spi.readstring(5);
         
         if(frameBeginning.slice(0, 3) != VALID_FRAME_BEGIN) {
-            parsedFrame.error = "Invalid frame";
+            parsedFrame.error = true; // Invalid frame
         } else {
         
             if(frameBeginning.slice(3, 5) == PACKET_CODE_ACK) {
@@ -409,14 +414,14 @@ class PN532 {
                 local packetLengthChecksum = frameBeginning[4];
 
                 if(_computeChecksumByte(packetLength) != packetLengthChecksum) {
-                    parsedFrame.error = "Packet length checksum failure";
+                    parsedFrame.error = true; // Packet length checksum failure
                 } else {
                 
                     // Consume the remainder of the frame and package it for parsing
                     local frameBody = _spi.readblob(packetLength + 1);
                     frameBody.seek(0, 'b');
                     if(_computeChecksumBlob(frameBody.readblob(packetLength)) != frameBody[packetLength]) {
-                        parsedFrame.error = "Data checksum failure";
+                        parsedFrame.error = true; // Data checksum failure
                     } else {
                         
                         switch(frameBody[0]) {
@@ -428,7 +433,7 @@ class PN532 {
                                 parsedFrame.type = FRAME_TYPE_APPLICATION_ERROR;
                                 break;
                             default:
-                                parsedFrame.error = "Unrecognized TFI";
+                                parsedFrame.error = true; // Unrecognized TFI
                         }
                     }
                 }
@@ -444,7 +449,7 @@ class PN532 {
         // Make sure this was not an IRQ reset
         if(_irq.read() == 0) {
             local parsedFrame = _spiReceiveFrame();
-            if(parsedFrame.error != null) {
+            if(parsedFrame.error) {
                 local nackFrame = _makeNackFrame();
                 _spiSendFrame(SPI_OP_DATA_WRITE, nackFrame);
                 return;
@@ -453,7 +458,7 @@ class PN532 {
             if(parsedFrame.type == FRAME_TYPE_ACK) {
                 _messageInTransit.cancelAckTimer();
             } else if(parsedFrame.type == FRAME_TYPE_APPLICATION_ERROR) {
-                parsedFrame.error = "Device Application Error";
+                parsedFrame.error = ERROR_DEVICE_APPLICATION;
             } else if(_messageInTransit.responseCallback != null) {
                 // If there is a callback, run and clear it
                 local savedResponseCallback = _messageInTransit.responseCallback;
@@ -473,7 +478,7 @@ class PN532 {
                 sendRequest(requestFrame, responseCallback, true, numRetries - 1);
             } else {
                 imp.wakeup(0, function() {
-                    responseCallback("Message transmission failed", null);
+                    responseCallback(ERROR_TRANSMIT_FAILURE, null);
                 });
             }
         }.bindenv(this));

@@ -15,6 +15,9 @@ class PN532MifareClassic {
 
     static BLOCK_LENGTH = 16;
     
+    static ERROR_INCORRECT_LENGTH = "Incorrect data length (must be 16 bytes)";
+    static ERROR_BAD_AUTHENTICATION = "Bad authentication";
+    
     _pn532 = null;
     
     function constructor(pn532) {
@@ -55,7 +58,7 @@ class PN532MifareClassic {
         // Each block has 16 bytes to write to
         if(data.len() != BLOCK_LENGTH) {
             imp.wakeup(0, function() {
-                callback("Incorrect data length (must be 16 bytes)", null);
+                callback(ERROR_INCORRECT_LENGTH, null);
             });
         }
         
@@ -104,9 +107,9 @@ class PN532MifareClassic {
                     userCallback(null, true);
                 });
             } else {
-                local message = status == AUTH_ERROR ? "Bad authentication" : status;
+                local message = status == AUTH_ERROR ? ERROR_BAD_AUTHENTICATION : "Error: " + status;
                 imp.wakeup(0, function() {
-                    userCallback("Error: " + message, null);
+                    userCallback(message, null);
                 });
             }
         };
