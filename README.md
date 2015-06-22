@@ -11,7 +11,7 @@ This library currently contains two classes:
 
 For an example of using the `PN532MifareClassic` class to build an ID card reader, see the [MIFARE reader example](examples/MIFARE).
 
-For an example extension class supporting PN532 card emulation mode, see the [`PN532CardEmulator`](#examples/cardEmulator) class.  It serves as an example of how to build on the `PN532` class to interface with the many other protocols and features that the PN532 supports.
+For an example extension class supporting PN532 card emulation mode, see the [`PN532CardEmulator`](examples/cardEmulator) class.  It serves as an example of how to build on the `PN532` class to interface with the many other protocols and features that the PN532 supports.
 
 # PN532 Class
 
