@@ -164,7 +164,7 @@ Repeatedly searches for nearby NFC tags of type *tagType* and passes scan result
 
     Any of the above members can also be combined with the flag `PN532.TAG_FLAG_MIFARE_FELICA` where appropriate to specify that only cards with MIFARE or FeliCa support should be polled.
 - *pollAttempts*: An integer representing how many times the PN532 should search for the specified card type. Any value between 0x01 and 0xFE will initiate the corresponding number of polls.  The value 0xFF will poll forever until a card is found.
-- *pollPeriod*: An integer controlling the time in between poll attempts.  It indicates units of 150 ms.
+- *pollPeriod*: An number controlling the time in between poll attempts.  It should be given in seconds, but will round up to the nearest multiple of of 150 ms.
 - *callback*: A function with the following parameters:
  - *error*: A string that is null on success.
  - *numTagsFounds*: The number of tags found during the scan (currently either 1 or 0)

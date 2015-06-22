@@ -80,6 +80,6 @@ reader <- PN532(spi, ncs, rstpd_l, irq, function(error) {
 
         // Begin scanning for cards - around once a second, indefinitely
         server.log("Beginning ID poll");
-	    mifareReader.pollNearbyTags(0xFF, 6, pollCallback); 
+	    mifareReader.pollNearbyTags(0xFF, 1.0, pollCallback); 
     });
 });

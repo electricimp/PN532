@@ -134,8 +134,10 @@ class PN532 {
     function pollNearbyTags(tagType, pollAttempts, pollPeriod, callback) {
         local dataBlob = blob(3);
         
+        local pollPeriodMultiplier = math.ceil(pollPeriod / 0.15);
+        
         dataBlob.writen(pollAttempts, 'b');
-        dataBlob.writen(pollPeriod, 'b');
+        dataBlob.writen(pollPeriodMultiplier, 'b');
         dataBlob.writen(tagType, 'b')
 
         local responseCallback = _getPollTagsCallback(callback);
