@@ -6,7 +6,7 @@ static USER_ID_ADDRESS = 0x02;
 // Label all pins
 local spi = hardware.spi257;
 local ncs = hardware.pin1;
-local rstpd = hardware.pin3;
+local rstpd_l = hardware.pin3;
 local irq = hardware.pin4;
 
 // Pre-configure SPI bus
@@ -61,7 +61,7 @@ function pollCallback(error, numTagsFound, tagData) {
     }
 };
 
-reader <- PN532(spi, ncs, rstpd, irq, function(error) {
+reader <- PN532(spi, ncs, rstpd_l, irq, function(error) {
     if(error != null) {
         server.error("Error constructing PN532: " + error);
         return;

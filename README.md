@@ -15,7 +15,7 @@ For an example extension class supporting PN532 card emulation mode, see the [`P
 
 # PN532 Class
 
-## Constructor: PN532(*spi, ncs, rstpd, irq, callback*)
+## Constructor: PN532(*spi, ncs, rstpd_l, irq, callback*)
 
 Creates and initializes an object representing the PN532 NFC device.
 
@@ -23,7 +23,7 @@ Creates and initializes an object representing the PN532 NFC device.
 
 - *spi*: A [SPI object](https://electricimp.com/docs/api/hardware/spi/) pre-configured with the flags `LSB_FIRST | CLOCK_IDLE_HIGH` and a clock rate.  The PN532 supports clock rates up to 5 MHz.
 - *ncs*: A pin connected to the PN532's not-chip-select line.
-- *rstpd*: A pin connected to the PN532's RSTPDN (Reset/Power-Down) pin.  This can be null if this the RSTPDN pin will not be under software control.
+- *rstpd_l*: A pin connected to the PN532's RSTPDN (Reset/Power-Down) pin.  This can be null if this the RSTPDN pin will not be under software control.
 - *irq*: A pin connected to the PN532's P70_IRQ pin.
 - *callback*: A function that will be called when object instantiation is complete.  It takes one *error* parameter that is null upon successful instantiation.
 
@@ -34,7 +34,7 @@ Creates and initializes an object representing the PN532 NFC device.
 
 local spi = hardware.spi257;
 local ncs = hardware.pin1;
-local rstpd = hardware.pin3;
+local rstpd_l = hardware.pin3;
 local irq = hardware.pin4;
 
 spi.configure(LSB_FIRST | CLOCK_IDLE_HIGH, 2000);
@@ -47,7 +47,7 @@ function constructorCallback(error) {
     // It's now safe to use the PN532
 }
 
-reader <- PN532(spi, ncs, rstpd, irq, constructorCallback);
+reader <- PN532(spi, ncs, rstpd_l, irq, constructorCallback);
 ```
 
 ## init(*callback*)
@@ -68,8 +68,8 @@ function initCallback(error) {
 }
 
 // Power cycle the device
-rstpd.write(0);
-rstpd.write(1);
+rstpd_l.write(0);
+rstpd_l.write(1);
 
 // Reinitialize
 reader.init(initCallback);
@@ -77,13 +77,13 @@ reader.init(initCallback);
 
 ## setHardPowerDown(*poweredDown, callback*)
 
-Enables or disables power to the PN532 using the *rstpdn* pin passed to the constructor.
+Enables or disables power to the PN532 using the *rstpdn_l* pin passed to the constructor.
 
 This produces a greater power savings than using [enablePowerSaveMode(*shouldEnable [, callback]*)](#enablepowersavemodeshouldenable--callback), but wipes all device state and must be explicitly turned off before the PN532 can be used again.  It will automatically call [init(*callback*)](#initcallback) upon power-up.
 
 The *callback* is called upon completion and takes one *error* parameter that is null on success.
 
-If the *rstpdn* pin was not passed to the constructor, the callback will return a `PN532.ERROR_NO_RSTPDN` error.
+If the *rstpdn_l* pin was not passed to the constructor, the callback will return a `PN532.ERROR_NO_RSTPDN` error.
 
 ### Usage
 
@@ -299,7 +299,7 @@ The *pn532* object must have been constructed with a version of the `PN532` libr
 
 // ... setup PN532 pins and callback ...
 
-local reader = PN532(spi, nss, rstpd, irq, constructorCallback);
+local reader = PN532(spi, nss, rstpd_l, irq, constructorCallback);
 mifareReader <- PN532MifareClassic(reader);
 ```
 

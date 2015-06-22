@@ -31,19 +31,19 @@ class PN532 {
     
     static WAKEUP_TIME = 0.002;
     
-    static ERROR_NO_RSTPDN = "No RSTPDN pin given";
+    static ERROR_NO_RSTPDN = "No RSTPDN_l pin given";
     static ERROR_CONCURRENT_COMMANDS = "Could not run command, previous command not completed";
     static ERROR_TRANSMIT_FAILURE = "Message transmission failed";
     static ERROR_DEVICE_APPLICATION = "Device Application Error";
     
     _spi = null;
     _ncs = null; // Not Chip Select
-    _rstpdn = null; // Reset and Power-Down
+    _rstpdn_l = null; // Reset and Power-Down, active low
     _irq = null;
     _messageInTransit = null;
     _powerSaveEnabled = null;
 
-    function constructor(spi, ncs, rstpdn, irq, callback) {
+    function constructor(spi, ncs, rstpdn_l, irq, callback) {
         _spi = spi;
         
         _ncs = ncs;
@@ -62,9 +62,9 @@ class PN532 {
         
         _powerSaveEnabled = false;
         
-        _rstpdn = rstpdn;
-        if(_rstpdn != null) {
-            _rstpdn.configure(DIGITAL_OUT, 1); // Start high - powered up
+        _rstpdn_l = rstpdn_l;
+        if(_rstpdn_l != null) {
+            _rstpdn_l.configure(DIGITAL_OUT, 1); // Start high - powered up
         }
         
         // Give time to wake up
@@ -92,8 +92,8 @@ class PN532 {
     
     function setHardPowerDown(poweredDown, callback) {
         // Control the power going into the PN532
-        if(_rstpdn != null) {
-            _rstpdn.write(poweredDown ? 0 : 1);
+        if(_rstpdn_l != null) {
+            _rstpdn_l.write(poweredDown ? 0 : 1);
             
             if(poweredDown) {
                 imp.wakeup(0, function() {
