@@ -4,6 +4,8 @@
 
 class PN532 {
     
+    static version = [1, 0, 0];
+    
     static SPI_OP_DATA_WRITE = 0x01;
     static SPI_OP_STATUS_READ = 0x02;
     static SPI_OP_DATA_READ = 0x03;

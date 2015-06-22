@@ -288,6 +288,8 @@ reader.sendRequest(frame, responseCallback, false);
 
 Associates this class with a previously constructed *pn532* object.
 
+The *pn532* object must have been constructed with a version of the `PN532` library with a version number in the 1.x.x major revision of at least 1.0.0.
+
 ### Usage
 
 ```squirrel
@@ -403,6 +405,8 @@ mifareReader.write(0x2, data, writeCallback);
 ## Constructor: PN532CardEmulator(*pn532*)
 
 Associates this class with a previously constructed *pn532* object.
+
+The *pn532* object must have been constructed with a version of the `PN532` library with a version number in the 1.x.x major revision of at least 1.0.0.
 
 ### Usage
 
