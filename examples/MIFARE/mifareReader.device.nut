@@ -12,29 +12,6 @@ local irq = hardware.pin4;
 // Pre-configure SPI bus
 spi.configure(LSB_FIRST | CLOCK_IDLE_HIGH, 2000);
 
-function constructorCallback(error) {
-    if(error != null) {
-        server.log("Error constructing PN532: " + error);
-        return;
-    }
-
-    // It's now safe to use the PN532
-
-    reader.enablePowerSaveMode(true, function(error, success) {
-        if(error != null) {
-            server.log(error);
-            return;
-        }
-        
-        // Add in MIFARE functionality
-        mifareReader <- PN532MifareClassic(reader);
-
-        // Begin scanning for cards - around once a second, indefinitely
-        server.log("Beginning ID poll");
-	    mifareReader.pollNearbyTags(0xFF, 6, pollCallback); 
-    });
-}
-
 function pollCallback(error, numTagsFound, tagData) {
     if(error != null) {
         server.log(error);
@@ -78,4 +55,25 @@ function pollCallback(error, numTagsFound, tagData) {
     }
 };
 
-reader <- PN532(spi, ncs, rstpd, irq, constructorCallback);
+reader <- PN532(spi, ncs, rstpd, irq, function(error) {
+    if(error != null) {
+        server.log("Error constructing PN532: " + error);
+        return;
+    }
+
+    // It's now safe to use the PN532
+
+    reader.enablePowerSaveMode(true, function(error, success) {
+        if(error != null) {
+            server.log(error);
+            return;
+        }
+        
+        // Add in MIFARE functionality
+        mifareReader <- PN532MifareClassic(reader);
+
+        // Begin scanning for cards - around once a second, indefinitely
+        server.log("Beginning ID poll");
+	    mifareReader.pollNearbyTags(0xFF, 6, pollCallback); 
+    });
+});

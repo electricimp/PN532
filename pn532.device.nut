@@ -385,7 +385,6 @@ class PN532 {
     }
     
     // TODO: parse extended frame format
-    // TODO: add parsedFrame type for standard data frames
     function _spiReceiveFrame() {
         local VALID_FRAME_BEGIN = "\0\0\xff";
         local PACKET_CODE_ACK = "\0\xff";
