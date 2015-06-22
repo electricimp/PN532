@@ -406,11 +406,11 @@ class PN532 {
         // Consume the beginning of the frame to check for errors and establish frame length.
         local frameBeginning = _spi.readstring(5);
         
-        if(frameBeginning.slice(0, 3) != VALID_FRAME_BEGIN) {
+        if(frameBeginning.find(VALID_FRAME_BEGIN) != 0) {
             parsedFrame.error = true; // Invalid frame
         } else {
         
-            if(frameBeginning.slice(3, 5) == PACKET_CODE_ACK) {
+            if(frameBeginning.find(PACKET_CODE_ACK) != 3) {
                 parsedFrame.type = FRAME_TYPE_ACK;
             } else {
             
