@@ -113,12 +113,10 @@ Enables or disables a power-saving mode on the PN532.  This mode will apply to a
 
 Note that even if this is set, power save mode will not be entered after certain commands (such as [pollNearbyTags(*tagType, pollAttempts, pollPeriod, callback*)](#pollnearbytagstagtype-pollattempts-pollperiod-callback)) that require state to be stored on the PN532.  This is automatically handled by the class and power save mode will be re-entered when a compatible command is run.
 
-When *shouldEnable* is true, *callback* must exist and take the following parameters:
+The *callback* must take the following parameters:
 
 - *error*: A string that is null on success.
-- *wasEnabled*: A boolean that will only be true on success.
-
-When *shouldEnable* is false, the callback is optional and will be ignored.
+- *wasEnabled*: A boolean that matches *shouldEnable*.
 
 ### Usage
 

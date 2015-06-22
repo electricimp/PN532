@@ -109,12 +109,16 @@ class PN532 {
         }
     }
     
-    function enablePowerSaveMode(shouldEnable, callback=null) {
+    function enablePowerSaveMode(shouldEnable, callback) {
         _powerSaveEnabled = shouldEnable;
-        if(shouldEnable && callback != null) {
+        if(shouldEnable) {
             // Send true as the response value because it's easier than adding a separate flow for a single-argument callback
             local responseCallback = _getPowerDownResponseCallback(true, callback);
             _sendPowerDownRequest(3, responseCallback);
+        } else {
+            imp.wakeup(0, function() {
+                callback(null, false);
+            });
         }
     }
     
