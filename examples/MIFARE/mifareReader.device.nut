@@ -12,28 +12,29 @@ local irq = hardware.pin4;
 // Pre-configure SPI bus
 spi.configure(LSB_FIRST | CLOCK_IDLE_HIGH, 2000);
 
+// Returns whether this is a MIFARE Classic 1k tag
+// A base list of identifiers can be found at http://nfc-tools.org/index.php?title=ISO14443A
+function isMifareClassic1k(tagData) {
+    return tagData.SENS_RES[0] == 0x00 && tagData.SENS_RES[1] == 0x04 && tagData.SEL_RES == 0x08;
+}
+
 function pollCallback(error, numTagsFound, tagData) {
     if(error != null) {
-        server.log(error);
+        server.error(error);
         return;
     }
-
-    // Since we are polling indefinitely, this should only have been called if a tag was found or if the poll was interrupted
-    if(numTagsFound > 0) {
-
-    	// Assume that the card is a MIFARE classic and attempt to authenticate a block
-        mifareReader.authenticate(tagData.NFCID, USER_ID_ADDRESS, PN532MifareClassic.AUTH_TYPE_A, null, function(error, authenticated) {
+        
+    if(numTagsFound > 0 && isMifareClassic1k(tagData)) {
+        mifareReader.authenticate(tagData.NFCID, 0x2, PN532MifareClassic.AUTH_TYPE_A, null, function(error, authenticated) {
             if(error != null) {
-                server.log(error);
+                server.error(error);
                 return;
             }
             
             if(authenticated) {
-
-            	// Read a block where we previously put a user ID
-                mifareReader.read(USER_ID_ADDRESS, function(error, data) {
+                mifareReader.read(0x2, function(error, data) {
                     if(error != null) {
-                        server.log(error);
+                        server.error(error);
                         return;
                     }
                     
@@ -52,12 +53,17 @@ function pollCallback(error, numTagsFound, tagData) {
                 });
             }
         });
+    } else {
+        // Repeat for next tag in a second
+        imp.wakeup(1, function() {
+            mifareReader.pollNearbyTags(0xFF, 6, pollCallback);
+        });
     }
 };
 
 reader <- PN532(spi, ncs, rstpd, irq, function(error) {
     if(error != null) {
-        server.log("Error constructing PN532: " + error);
+        server.error("Error constructing PN532: " + error);
         return;
     }
 
@@ -65,7 +71,7 @@ reader <- PN532(spi, ncs, rstpd, irq, function(error) {
 
     reader.enablePowerSaveMode(true, function(error, success) {
         if(error != null) {
-            server.log(error);
+            server.error(error);
             return;
         }
         

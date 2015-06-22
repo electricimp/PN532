@@ -8,6 +8,6 @@ The code begins by gathering all of the necessary pins and configuring the SPI b
 
 It then initializes the PN532 and enable the power-save mode.  Note that this use of power-save will not have a tremendous effect, as it is incompatible with most MIFARE transactions and will be automatically disabled in these cases.
 
-Next, it starts an indefinite auto-poll for tags.  When a tag is found, it is assumed to be a properly formatted MIFARE Classic and we attempt to read an ID field from it.  If this code were particularly careful, it could have verified this by examining the *tagData* parameter of the *pollCallback* function.
+Next, it starts an indefinite auto-poll for tags.  When a tag is found, it is verified to be a MIFARE Classic 1k and if so, we attempt to read an ID field from it.
 
 Finally, the code waits a second to avoid duplicate reads and repeats the polling process.
