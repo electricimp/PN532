@@ -19,7 +19,7 @@ The *pn532* object must have been constructed with a version of the `PN532` libr
 
 // ... setup PN532 pins and callback ...
 
-local reader = PN532(spi, nss, rstpd, irq, constructorCallback);
+local reader = PN532(spi, ncs, rstpd_l, irq, constructorCallback);
 cardEmulator <- PN532CardEmulator(reader);
 ```
 
