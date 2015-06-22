@@ -360,7 +360,9 @@ class PN532 {
     }
     
     static function _makeNackFrame() {
-        return "\0\0\xff\xff\0\0";
+        local frame = blob(6);
+        frame.writestring("\0\0\xff\xff\0\0");
+        return frame;
     }
     
     /***** LINK LAYER COMMUNICATION *****/
@@ -411,7 +413,7 @@ class PN532 {
             parsedFrame.error = true; // Invalid frame
         } else {
         
-            if(frameBeginning.find(PACKET_CODE_ACK) != 3) {
+            if(frameBeginning.find(PACKET_CODE_ACK, 3) == 3) {
                 parsedFrame.type = FRAME_TYPE_ACK;
             } else {
             
@@ -484,7 +486,7 @@ class PN532 {
             } else {
                 imp.wakeup(0, function() {
                     responseCallback(ERROR_TRANSMIT_FAILURE, null);
-                });
+                }.bindenv(this));
             }
         }.bindenv(this));
         
