@@ -26,6 +26,8 @@ class PN532 {
     static TAG_TYPE_106_B = 0x03;
     static TAG_TYPE_106_JEWEL = 0x04;
     static TAG_FLAG_MIFARE_FELICA = 0x10;
+
+    static POLL_INDEFINITELY = 0xFF;
     
     static STATUS_OK = 0;
     

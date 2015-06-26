@@ -163,7 +163,7 @@ Repeatedly searches for nearby NFC tags of type *tagType* and passes scan result
  - `PN532.TAG_TYPE_106_JEWEL`: 106 kbps Innovision Jewel
 
     Any of the above members can also be combined with the flag `PN532.TAG_FLAG_MIFARE_FELICA` where appropriate to specify that only cards with MIFARE or FeliCa support should be polled.
-- *pollAttempts*: An integer representing how many times the PN532 should search for the specified card type. Any value between 1 and 254 will initiate the corresponding number of polls.  The static class member `PN532MifareClassic.POLL_INDEFINITELY` will cause this command to poll forever until a card is found.
+- *pollAttempts*: An integer representing how many times the PN532 should search for the specified card type. Any value between 1 and 254 will initiate the corresponding number of polls.  The static class member `PN532.POLL_INDEFINITELY` will cause this command to poll forever until a card is found.
 - *pollPeriod*: An number controlling the time in between poll attempts.  It should be given in seconds, but will round up to the nearest multiple of of 150 ms.
 - *callback*: A function with the following parameters:
  - *error*: A string that is null on success.

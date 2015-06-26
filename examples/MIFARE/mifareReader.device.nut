@@ -1,7 +1,7 @@
 #require "PN532.class.nut:1.0.0"
 #require "PN532MifareClassic.class.nut:1.0.0"
 
-static USER_ID_ADDRESS = 0x02;
+const USER_ID_ADDRESS = 0x02;
 
 // Label all pins
 local spi = hardware.spi257;
@@ -43,20 +43,20 @@ function pollCallback(error, numTagsFound, tagData) {
                     
                     // Repeat for next tag in a second
                     imp.wakeup(1, function() {
-    	                mifareReader.pollNearbyTags(PN532MifareClassic.POLL_INDEFINITELY, 6, pollCallback);
+    	                mifareReader.pollNearbyTags(PN532.POLL_INDEFINITELY, 6, pollCallback);
                     });
                 });
             }  else {
                 // Repeat for next tag in a second
                 imp.wakeup(1, function() {
-	                mifareReader.pollNearbyTags(PN532MifareClassic.POLL_INDEFINITELY, 6, pollCallback);
+	                mifareReader.pollNearbyTags(PN532.POLL_INDEFINITELY, 6, pollCallback);
                 });
             }
         });
     } else {
         // Repeat for next tag in a second
         imp.wakeup(1, function() {
-            mifareReader.pollNearbyTags(PN532MifareClassic.POLL_INDEFINITELY, 6, pollCallback);
+            mifareReader.pollNearbyTags(PN532.POLL_INDEFINITELY, 6, pollCallback);
         });
     }
 };
@@ -80,6 +80,6 @@ reader <- PN532(spi, ncs, rstpd_l, irq, function(error) {
 
         // Begin scanning for cards - around once a second, indefinitely
         server.log("Beginning ID poll");
-	    mifareReader.pollNearbyTags(PN532MifareClassic.POLL_INDEFINITELY, 1.0, pollCallback); 
+	    mifareReader.pollNearbyTags(PN532.POLL_INDEFINITELY, 1.0, pollCallback); 
     });
 });
