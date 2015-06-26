@@ -59,9 +59,9 @@ function onSelect(error, mode, initiatorCommand) {
 }
 
 // Make a dummy NFC ID
-blob nfcId3 = blob(10);
+local nfcId3 = blob(10);
 for(local i = 0; i < 10; i++) {
-    nfcId3t[i] = i;
+    nfcId3[i] = i;
 }
 
 cardEmulator.enterTargetMode(mifareParams, felicaParams, nfcId3, null, onSelect);
