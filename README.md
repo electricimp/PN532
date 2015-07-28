@@ -139,7 +139,12 @@ Takes a *callback* with two parameters:
 
 ```squirrel
 function firmwareVersionCallback(error, version) {
-        server.log(format("Firmware version: %X:%X.%X-%X", version, version.ver, version.rev, version.support));
+    if(error != null) {
+        server.log(error);
+        return;
+    }
+    
+    server.log(format("Firmware version: %X:%X.%X-%X", version.ic, version.ver, version.rev, version.support));
 }
 
 reader.getFirmwareVersion(firmwareVersionCallback);
