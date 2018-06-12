@@ -18,7 +18,7 @@ Creates and initializes an object representing the PN532 NFC device.
 
 ### Parameters
 
-- *spi*: A [SPI object](https://electricimp.com/docs/api/hardware/spi/) pre-configured with the flags `LSB_FIRST | CLOCK_IDLE_HIGH` and a clock rate.  The PN532 supports clock rates up to 5 MHz.
+- *spi*: A [SPI object](https://developer.electricimp.com/api/hardware/spi) pre-configured with the flags `LSB_FIRST | CLOCK_IDLE_HIGH` and a clock rate.  The PN532 supports clock rates up to 5 MHz.
 - *ncs*: A pin connected to the PN532's not-chip-select line.
 - *rstpd_l*: A pin connected to the PN532's RSTPDN (Reset/Power-Down) pin.  This can be null if this the RSTPDN pin will not be under software control.
 - *irq*: A pin connected to the PN532's P70_IRQ pin.
