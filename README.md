@@ -27,7 +27,7 @@ Creates and initializes an object representing the PN532 NFC device.
 ### Usage
 
 ```squirrel
-#require "PN532.class.nut:1.0.0"
+#require "PN532.class.nut:1.0.1"
 
 local spi = hardware.spi257;
 local ncs = hardware.pin1;
@@ -90,15 +90,15 @@ reader.setHardPowerDown(true, function(error) {
         server.log(error);
         return;
     }
-    
+
     // Spend a long time doing things that don't require the PN532...
-    
+
     reader.setHardPowerDown(false, function(error) {
         if(error != null) {
             server.log(error);
             return;
         }
-        
+
         // Continue using the PN532 from here
     });
 
@@ -120,7 +120,7 @@ The *callback* must take the following parameters:
 
 ```squirrel
 function powerSaveCallback(error, succeeded) {
-        // Continue using PN532 with lower power usage 
+        // Continue using PN532 with lower power usage
 }
 
 reader.enablePowerSaveMode(true, powerSaveCallback);
@@ -143,7 +143,7 @@ function firmwareVersionCallback(error, version) {
         server.log(error);
         return;
     }
-    
+
     server.log(format("Firmware version: %X:%X.%X-%X", version.ic, version.ver, version.rev, version.support));
 }
 
@@ -185,7 +185,7 @@ function scanCallback(error, numTagsFound, tagData) {
         server.log(error);
         return;
     }
-    
+
     if(numTagsFound > 0) {
         server.log("Found a tag:");
         server.log(format("SENS_RES: %X %X", tagData.SENS_RES[0], tagData.SENS_RES[1]));
@@ -221,7 +221,7 @@ function makeMifareReadFrame(address) {
 
     frame.writen(0x30, 'b');
     frame.writen(address, 'b');
-        
+
     return PN532.makeDataExchangeFrame(1, frame);
 }
 ```
@@ -276,13 +276,13 @@ function responseCallback(error, responseData) {
         });
         return;
     }
-            
+
     // Process responseData...
     server.log(responseData.tostring());
 }
 
 local frame = makeMifareReadFrame(0x3);
-reader.sendRequest(frame, responseCallback, false);  
+reader.sendRequest(frame, responseCallback, false);
 ```
 
 # License
